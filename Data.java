@@ -4,6 +4,8 @@
 
 /**
  * A class to represent a tagged datum.
+ *
+ * @version $Revision$
  */
 public class Data implements Cloneable {
     /** The type of this datum. */
@@ -29,6 +31,11 @@ public class Data implements Cloneable {
 
     /**
      * Constructor.
+     *
+     * @param type The type of this datum.
+     * @param value An <code>Object</code> representing the value of
+     * this datum.
+     * @see Code#Code
      */
     public Data(int type, Object value) {
 	this.type = type;
@@ -38,6 +45,8 @@ public class Data implements Cloneable {
 
     /**
      * Method to duplicate this object.
+     *
+     * @return A duplicate of this object.
      */
     public Object clone() {
         Object valCopy = null;
@@ -59,6 +68,8 @@ public class Data implements Cloneable {
 
     /**
      * Returns the type of this datum.
+     *
+     * @return The type of this datum.
      */
     public int getType() {
 	return type;
@@ -66,6 +77,9 @@ public class Data implements Cloneable {
 
     /**
      * Returns the value of this datum.
+     *
+     * @return The value of this datum.
+     * @see Code#Code
      */
     public Object getValue() {
 	return value;
@@ -73,6 +87,9 @@ public class Data implements Cloneable {
 
     /**
      * Sets the type of this datum.
+     *
+     * @param type An <code>int</code> representing the type of this
+     * datum.
      */
     public void setType(int type) {
 	this.type = type;
@@ -81,6 +98,10 @@ public class Data implements Cloneable {
 
     /**
      * Sets the value of this datum.
+     *
+     * @param value An <code>Object</code> representing the value of
+     * this datum.
+     * @see Code#Code
      */
     public void setValue(Object value) {
 	this.value = value;
@@ -88,8 +109,9 @@ public class Data implements Cloneable {
     }
 
     /**
-     * Returns a String representation of the value in this Data
-     * object.
+     * Returns a String representation of the value in this datum.
+     *
+     * @return A String representation of the value in this datum.
      */
     public String toString() {
 	if (type == UNDEF) {
