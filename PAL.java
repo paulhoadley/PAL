@@ -201,6 +201,33 @@ public class PAL {
 		    }
 		}
 		break;
+            case Mnemonic.LDA:
+                if(!(o instanceof Integer)) {
+                    error(nextInst, "Argument to LDA must be an integer.");
+                    die(1);
+                }
+
+                int address = dataStack.getAddress(nextInst.getFirst(), ((Integer)o).intValue());
+
+                dataStack.push(new Data(Data.INT, new Integer(address)));
+
+                break;
+            case Mnemonic.LDI:
+                Data tos = dataStack.pop();
+
+                if(tos.getType() != Data.INT) {
+                    dataStack.push(tos);
+                    error(nextInst, "LDI - top of stack must be an integer.");
+                    die(1);
+                }
+
+                address = ((Integer)tos.getValue()).intValue();
+
+                Data loadedVal = dataStack.get(address);
+
+                dataStack.push((Data)loadedVal.clone());
+
+                break;
 	    case Mnemonic.OPR:
 		doOperation(nextInst);
 		break;
@@ -375,7 +402,7 @@ public class PAL {
 	case 23:
 	    // Duplicate the element at the top of the stack.
             Data target = dataStack.peek();
-	    dataStack.push(new Data(target.getType(), new Integer(((Integer)target.getValue()).intValue())));
+	    dataStack.push((Data)target.clone());
 	    break;
 	case 24:
 	    // Discard the element at the top of the stack.
