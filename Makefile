@@ -10,6 +10,9 @@ JAVADOC=	${JAVA_HOME}/bin/javadoc
 DOCDIR=		html
 JAVADOCOPTS=	-version -author -windowtitle "PAL Machine Simulator" \
 		-d ${DOCDIR} -private
+JAR=		${JAVA_HOME}/bin/jar
+JARFILE=	PAL.jar
+JAROPTS=	-cfm
 
 ECHO=		/usr/ucb/echo
 
@@ -37,11 +40,19 @@ clean:
 	rm -rf ${DOCDIR}
 	rm -f test/*.out
 	rm -f test/interactive/*.out
+	rm -f ${JARFILE}
+	rm -f jar-manifest
 
 .PHONY: docs
 docs:
 	mkdir -p ${DOCDIR}
 	${JAVADOC} ${JAVADOCOPTS} ${SRC}
+
+.PHONY: jar
+jar:	${CLASSFILES}
+	echo "Main-class: PAL" > jar-manifest
+	${JAR} ${JAROPTS} ${JARFILE} jar-manifest ${CLASSFILES}
+	rm jar-manifest
 
 .PHONY: test
 test:
