@@ -142,7 +142,7 @@ public class DataStack {
 
     public String toString() {
         String result = new String();
-        for(int i = top;i >= 0;i--) {
+        for(int i = top - 1;i >= 0;i--) {
             result += get(i) + "\n";
         }
 
