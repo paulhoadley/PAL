@@ -812,6 +812,20 @@ public class PAL {
 	    }
 	    dataStack.push(new Data(Data.BOOL, new Boolean(((Boolean)(bool1.getValue())).booleanValue() || ((Boolean)(bool2.getValue())).booleanValue())));
 	    break;
+        case 31:
+            // Test whether the current exception code is the same as
+            // the integer on TOS.
+            tos = dataStack.pop();
+            if(tos.getType() != Data.INT) {
+                dataStack.push(tos);
+                error(currInst, "OPR 0 31 expects an integer value on top of the stack.");
+                die(1);
+            }
+
+            boolean pushValue = ((Integer)tos.getValue()).intValue() == currentException;
+
+            dataStack.push(new Data(Data.BOOL, new Boolean(pushValue)));
+            break;
 	default:
 	    System.out.println("OPR " + opr + ": not implemented.");
 	}
@@ -869,7 +883,9 @@ public class PAL {
         Data handlerLocation;
         int handlerAddress;
 
-        while(dataStack.getAddress(0, 0) > 5)  {
+        boolean moreFrames = true;
+
+        while(moreFrames)  {
             handlerLocation = dataStack.get(0, -1);
 
             if(handlerLocation.getType() != Data.INT) {
@@ -887,6 +903,13 @@ public class PAL {
             if(handlerAddress == 0) {
                 //An address of 0 means no handler - throw away this
                 //frame and keep searching.
+
+                //First, check if this is the lowest frame - the lowest
+                //frame has a base address of 4.
+                if(dataStack.getAddress(0,0) == 4) {
+                    moreFrames = false;
+                    break;
+                }
 
                 //Remember the dynamic link.
                 Data dynamicLink = dataStack.get(0, -3);
@@ -907,6 +930,12 @@ public class PAL {
                 //Stop throwing out frames.
                 break;
             }
+        }
+
+        if(!moreFrames) {
+            //No handler was found.
+            error(currInst, "Exception never handled!");
+            die(1);
         }
     }
 
