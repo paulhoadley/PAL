@@ -5,6 +5,12 @@
 JAVA_HOME=	/usr/local/java
 JIKESPATH=	${JAVA_HOME}/jre/lib/rt.jar
 JAVAC=		jikes -classpath ${JIKESPATH}
+JAVADOC=	${JAVA_HOME}/bin/javadoc
+DOCDIR=		html
+JAVADOCOPTS=	-version -author -windowtitle "DLX Project" \
+		-d ${DOCDIR} -private
+
+SRC=		$(wildcard *.java)
 
 %.class:	%.java
 	$(JAVAC) $<
@@ -18,3 +24,9 @@ all:		${CLASSFILES}
 clean:
 	rm -f *~
 	rm -f *.class
+	rm -r ${DOCDIR}
+
+.PHONY: docs
+docs:
+	mkdir -p ${DOCDIR}
+	${JAVADOC} ${JAVADOCOPTS} ${SRC}
