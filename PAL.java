@@ -144,14 +144,18 @@ public class PAL {
 		lineno++;
 	    }
 
-            //Set up the input reader.
+            // Set up the input reader.
 	    pushBack = new PushbackReader(new InputStreamReader(System.in));
-            //Note: the internal buffer of the BufferedReader is set to
-            //1 (the smallest possible) so that it won't buffer up to
-            //EOF, thereby confusing OPR 19.
+            // Note: the internal buffer of the BufferedReader is set
+            // to 1 (the smallest possible) so that it won't buffer up
+            // to EOF, thereby confusing OPR 19.
             inputReader = new BufferedReader(pushBack, 1);
+	} catch (FileNotFoundException e) {
+	    usage();
+	    System.exit(1);
 	} catch (IOException e) {
 	    System.err.println(e);
+	    System.exit(1);
 	}
 
         currentException = 0;
@@ -167,7 +171,7 @@ public class PAL {
      * PAL Machine</a>.
      */
     private void execute() {
-        //Initialise program counter.
+        // Initialise program counter.
         pc = 0;
 
 	Code currInst;
@@ -185,24 +189,24 @@ public class PAL {
 
 	    switch (Mnemonic.mnemonicToInt(currInst.getMnemonic())) {
             case Mnemonic.CAL:
-                //Procedure/function call.
+                // Procedure/function call.
 
-                //Set return point field in stack mark.
+                // Set return point field in stack mark.
                 returnPoint = dataStack.get(dataStack.getTop() - currInst.getFirst() - 2);
                 returnPoint.setType(Data.INT);
                 returnPoint.setValue(new Integer(pc));
 
-                //Set new frame base.
+                // Set new frame base.
                 dataStack.setBase(dataStack.getTop() - currInst.getFirst());
 
-                //Jump to procedure/function code.
-                //Note that while the PAL instructions start from 1,
-                //our code store is indexed from 0.
+                // Jump to procedure/function code.  Note that while
+                // the PAL instructions start from 1, our code store
+                // is indexed from 0.
                 pc = ((Integer)currInst.getSecond()).intValue() - 1;
 
                 break;
 	    case Mnemonic.INC:
-                //Push space onto the stack.
+                // Push space onto the stack.
 
 		if (!(o instanceof Integer)) {
 		    error(currInst, "Argument to INC must be an integer.");
@@ -212,7 +216,7 @@ public class PAL {
                 }
                 break;
             case Mnemonic.JIF:
-                //Jump if false.
+                // Jump if false.
 
                 if (!(o instanceof Integer)) {
                     error(currInst, "Argument to JIF must be an integer.");
@@ -236,14 +240,14 @@ public class PAL {
                         die(1);
                     }
 
-                    //Our code store uses zero-based indexing.
-                    //For compatibility reasons, addresses start at 1.
+                    // Our code store uses zero-based indexing.  For
+                    // compatibility reasons, addresses start at 1.
                     pc = destination - 1;
                 }
 
                 break;
             case Mnemonic.JMP:
-                //Unconditional jump.
+                // Unconditional jump.
 
                 if (!(o instanceof Integer)) {
                     error(currInst, "Argument to JMP must be an integer.");
@@ -262,13 +266,13 @@ public class PAL {
                     die(1);
                 }
 
-                //Our code store uses zero-based indexing.  For
-                //compatibility reasons, addresses start at 1.
+                // Our code store uses zero-based indexing.  For
+                // compatibility reasons, addresses start at 1.
                 pc = destination - 1;
 
                 break;
 	    case Mnemonic.LCI:
-                //Load an integer constant onto the stack.
+                // Load an integer constant onto the stack.
 
 		if (!(o instanceof Integer)) {
 		    error(currInst, "Argument to LCI must be an integer.");
@@ -278,7 +282,7 @@ public class PAL {
                 }
                 break;
 	    case Mnemonic.LCR:
-                //Load a real constant onto the stack.
+                // Load a real constant onto the stack.
 
                 if(o instanceof Integer) {
                     o = new Float(((Integer)o).floatValue());
@@ -292,7 +296,7 @@ public class PAL {
                 }
                 break;
 	    case Mnemonic.LCS:
-                //Load a string constant onto the stack.
+                // Load a string constant onto the stack.
 
 		if (!(o instanceof String)) {
 		    error(currInst, "Argument to LCS must be a string.");
@@ -307,8 +311,8 @@ public class PAL {
 		}
 		break;
             case Mnemonic.LDA:
-                //Load the address of a stack location onto the top of
-                //the stack.
+                // Load the address of a stack location onto the top
+                // of the stack.
 
                 if(!(o instanceof Integer)) {
                     error(currInst, "Argument to LDA must be an integer.");
@@ -321,7 +325,7 @@ public class PAL {
 
                 break;
             case Mnemonic.LDI:
-                //Load the value addressed by the top of stack.
+                // Load the value addressed by the top of stack.
 
                 tos = dataStack.pop();
 
@@ -339,8 +343,8 @@ public class PAL {
 
                 break;
             case Mnemonic.LDV:
-                //Load a value from elsewhere in the stack onto the
-                //top.
+                // Load a value from elsewhere in the stack onto the
+                // top.
 
                 if(!(o instanceof Integer)) {
                     error(currInst, "Argument to LDV must be an integer");
@@ -353,15 +357,15 @@ public class PAL {
 
                 break;
             case Mnemonic.LDU:
-                //Load an uninitialised value onto the top of the
-                //stack.
+                // Load an uninitialised value onto the top of the
+                // stack.
 
                 dataStack.push(new Data(Data.UNDEF, null));
 
                 break;
             case Mnemonic.MST:
-                //Mark the stack in preparation for a
-                //procedure/function call.
+                // Mark the stack in preparation for a
+                // procedure/function call.
 
                 int staticLink = dataStack.getAddress(currInst.getFirst(), 0);
                 int dynamicLink = dataStack.getAddress(0, 0);
@@ -373,7 +377,7 @@ public class PAL {
 		doOperation(currInst);
 		break;
 	    case Mnemonic.RDI:
-		// Read an integer from stdin.
+		// Read an integer from stdin. 
 
 		String intLine = "";
 		try {
@@ -419,8 +423,8 @@ public class PAL {
 		}
 		break;
             case Mnemonic.REH:
-                //Register an exception handler with the current stack
-                //mark.
+                // Register an exception handler with the current
+                // stack mark.
 
                 if(!(o instanceof Integer)) {
                     error(currInst, "Argument to REH must be an integer.");
@@ -436,9 +440,9 @@ public class PAL {
 
                 break;
             case Mnemonic.SIG:
-                //If the argument is 0 (the predefined "re-raise"
-                //code), re-raise the current exception.  Otherwise,
-                //raise the exception specified by the argument.
+                // If the argument is 0 (the predefined "re-raise"
+                // code), re-raise the current exception.  Otherwise,
+                // raise the exception specified by the argument.
 
                 if(!(o instanceof Integer)) {
                     error(currInst, "Argument to SIG must be an integer.");
@@ -449,17 +453,17 @@ public class PAL {
                 if(excType != reraise) {
                     currentException = excType;
                 } else {
-                    //Re-raise the current exception.  SIG 0 0 is
-                    //typically called by an exception handler when it
-                    //can't handle the current exception type.  We
-                    //don't want to run that same handler again!  A
-                    //simple way to achieve this is to nullify the
-                    //current exception handler pointer.
+                    // Re-raise the current exception.  SIG 0 0 is
+                    // typically called by an exception handler when
+                    // it can't handle the current exception type.  We
+                    // don't want to run that same handler again!  A
+                    // simple way to achieve this is to nullify the
+                    // current exception handler pointer.
                     Data handlerLocation = dataStack.get(0, -1);
                     handlerLocation.setValue(new Integer(0));
                 }
 
-                //Raise the exception...
+                // Raise the exception...
                 raiseException(currInst);
 
                 break;
@@ -534,49 +538,51 @@ public class PAL {
 
 	switch (opr) {
         case 0:
-            //Procedure return.
+            // Procedure return.
 
-            //Set program counter.
+            // Set program counter.
             returnPoint = dataStack.get(0, -2);
             pc = ((Integer)returnPoint.getValue()).intValue();
 
-            //Remember the dynamic link.
+            // Remember the dynamic link.
             dynamicLink = dataStack.get(0, -3);
 
-            //Pop data from the stack back down to the last frame.
+            // Pop data from the stack back down to the last frame.
             int popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
 
             for(int i = 0;i < popCount;i++) {
                 dataStack.pop();
             }
 
-            //Set the new frame base using the remembered dynamic link.
+            // Set the new frame base using the remembered dynamic
+            // link.
             dataStack.setBase(((Integer)dynamicLink.getValue()).intValue());
 
             break;
         case 1:
-            //Function return.
+            // Function return.
 
             tos = dataStack.pop();
 
-            //Set program counter.
+            // Set program counter.
             returnPoint = dataStack.get(0, -2);
             pc = ((Integer)returnPoint.getValue()).intValue();
 
-            //Remember the dynamic link.
+            // Remember the dynamic link.
             dynamicLink = dataStack.get(0, -3);
 
-            //Pop data from the stack back down to the last frame.
+            // Pop data from the stack back down to the last frame.
             popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
 
             for(int i = 0;i < popCount;i++) {
                 dataStack.pop();
             }
 
-            //Set the new frame base using the remembered dynamic link.
+            // Set the new frame base using the remembered dynamic
+            // link.
             dataStack.setBase(((Integer)dynamicLink.getValue()).intValue());
 
-            //Leave the return value on top of the stack.
+            // Leave the return value on top of the stack.
             dataStack.push(tos);
 
             break;
@@ -693,7 +699,7 @@ public class PAL {
 	    }
 	    break;
 	case 8:
-            //String concatenation.
+            // String concatenation.
 
 	    tos = dataStack.pop();
 	    ntos = dataStack.pop();
