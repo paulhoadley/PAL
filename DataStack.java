@@ -21,7 +21,7 @@ public class DataStack {
     /** Reference to the next free space on top of the stack (TOS). */
     private int top;
 
-    /** Maximum stack size. A value of 0 indicates no limit.*/
+    /** Maximum stack size. A value <= 0 indicates no limit.*/
     private int maxSize;
 
     /**
@@ -46,7 +46,7 @@ public class DataStack {
 
         setBase(top);
 
-        maxSize = max;
+        maxSize = (max > 0 ? max : 0);
     }
 
     /**
@@ -132,15 +132,13 @@ public class DataStack {
      * advance the TOS pointer beyond the limit of the stack memory.
      */
     public void incTop(int amount) throws OutOfMemoryError {
+        if((maxSize != 0) && (amount + top > maxSize))
+            throw new OutOfMemoryError("PAL Stack out of memory");
+
         for(int i = 0;i < amount;i++) {
             data.add(new Data(Data.UNDEF, null));
             top++;
         }
-
-        if(maxSize == 0 || top < maxSize)
-            return;
-
-        throw new OutOfMemoryError("PAL Stack out of memory");
     }
 
     /**
