@@ -71,6 +71,10 @@ public class Data {
      * object.
      */
     public String toString() {
-	return value.toString();
+	if (type == UNDEF) {
+	    return "UNDEF";
+	} else {
+	    return value.toString();
+	}
     }
 }
