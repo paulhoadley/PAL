@@ -87,7 +87,7 @@ public class DataStack {
      */
     public Data get(int levelDiff, int offset) throws IndexOutOfBoundsException {
         int address = offset;
-        address += ((Integer)stackFrames.get(stackFrames.size() - levelDiff)).intValue();
+        address += ((Integer)stackFrames.get(stackFrames.size() - 1 - levelDiff)).intValue();
 
         if(address < 0 || address >= top)
             throw new IndexOutOfBoundsException("PAL address out of bounds.");
@@ -132,7 +132,7 @@ public class DataStack {
     public int getAddress(int levelDiff, int offset) throws IndexOutOfBoundsException {
         int result = offset;
 
-        result += ((Integer)stackFrames.get(stackFrames.size() - levelDiff)).intValue();
+        result += ((Integer)stackFrames.get(stackFrames.size() - 1 - levelDiff)).intValue();
 
         if(result < 0 || result >= top)
             throw new IndexOutOfBoundsException("PAL address out of bounds.");

@@ -298,7 +298,7 @@ public class PAL {
                 }
 
                 // Get the location of the nearest exception handler pointer.
-                address = dataStack.getAddress(1, 0) - 1;
+                address = dataStack.getAddress(0, 0) - 1;
                 storeLocation = dataStack.get(address);
 
                 storeLocation.setType(Data.INT);
