@@ -157,7 +157,12 @@ public class DataStack {
         push(new Data(Data.INT, new Integer(staticLink)));
         push(new Data(Data.INT, new Integer(dynamicLink)));
 
-        incTop(2);
+        //Leave space for return point.
+        incTop(1);
+
+        //Dummy exception handler address - indicates that no handler
+        //is registered.
+        push(new Data(Data.INT, new Integer(0)));
     }
 
     /**

@@ -35,6 +35,9 @@ public class PAL {
     /** Wrapper to enable pushback of bytes into the input stream. */
     private PushbackReader pushBack;
 
+    /** The number of the present exception. */
+    private int currentException;
+
     /**
      * Main method for command line operation.
      *
@@ -125,6 +128,9 @@ public class PAL {
 	} catch (IOException e) {
 	    System.err.println(e);
 	}
+
+        currentException = 0;
+
 	return;
     }
 
@@ -365,6 +371,23 @@ public class PAL {
 
                 storeLocation.setType(Data.INT);
                 storeLocation.setValue(o);
+
+                break;
+            case Mnemonic.SIG:
+                //If the argument is 0, re-raise the current exception.
+                //Otherwise, raise the exception specified by the argument.
+                if(!(o instanceof Integer)) {
+                    error(currInst, "Argument to SIG must be an integer.");
+                    die(1);
+                }
+
+                int excType = ((Integer)o).intValue();
+                if(excType != 0) {
+                    currentException = excType;
+                }
+
+                //Raise the exception...
+                raiseException(currInst);
 
                 break;
             case Mnemonic.STI:
@@ -827,13 +850,73 @@ public class PAL {
     }
 
     /**
+     * Raise an exception - look down through stack frames for an
+     * exception handler.
+     *
+     * This method uses the {@link PAL#currentException
+     * <code>currentException</code>} variable to determine which
+     * exception to raise.  Exception 1 (Program Abort) cannot be
+     * caught, so the program just terminates.  All other exceptions
+     * are treated equally.
+     * @param currInst The <code>Code</code> object which caused the
+     * exception.  Used to add information to error messages.
+     */
+    private void raiseException(Code currInst) {
+        if(currentException == 1) {
+            die(1);
+        }
+
+        Data handlerLocation;
+        int handlerAddress;
+
+        while(dataStack.getAddress(0, 0) > 5)  {
+            handlerLocation = dataStack.get(0, -1);
+
+            if(handlerLocation.getType() != Data.INT) {
+                error(currInst, "Exception handler address must be an integer.");
+                die(1);
+            }
+
+            handlerAddress = ((Integer)handlerLocation.getValue()).intValue();
+
+            if(handlerAddress < 0 || handlerAddress > codeMem.size()) {
+                error(currInst, "Exception handler address out of code range.");
+                die(1);
+            }
+
+            if(handlerAddress == 0) {
+                //An address of 0 means no handler - throw away this
+                //frame and keep searching.
+
+                //Remember the dynamic link.
+                Data dynamicLink = dataStack.get(0, -3);
+
+                //Pop data from the stack back down to the last frame.
+                int popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
+
+                for(int i = 0;i < popCount;i++) {
+                    dataStack.pop();
+                }
+
+                //Set the new frame base using the remembered dynamic link.
+                dataStack.setBase(((Integer)dynamicLink.getValue()).intValue());
+            } else {
+                //There is an exception handler.
+                pc = handlerAddress - 1;
+
+                //Stop throwing out frames.
+                break;
+            }
+        }
+    }
+
+    /**
      * Print an error.  Errors are almost invariably unrecoverable, so
      * this method announces the error, prints the offending
      * instruction and dumps the stack.
      *
      * @param currInst The offending <code>Code</code> object.
-     * @param s A context-dependent error message to be printed.
-     */
+     * @param s A context-dependent error message to be printed.  */
     private void error(Code currInst, String s) {
 	// Ensure the error is always started on a new line.
 	System.err.println();
