@@ -363,24 +363,24 @@ public class PAL {
 	    // Pop values at TOS and TOS-1,
 	    // add/subtract/multiply/divide them (depending on the
 	    // opcode) and push result onto TOS.
-	    Data val1 = dataStack.pop();
-	    Data val2 = dataStack.pop();
-	    if (val1.getType() != val2.getType()) {
-		dataStack.push(val2);
-		dataStack.push(val1);
+	    Data secondArg = dataStack.pop();
+	    Data firstArg = dataStack.pop();
+	    if (firstArg.getType() != secondArg.getType()) {
+		dataStack.push(firstArg);
+		dataStack.push(secondArg);
 		error(currInst, "Values for arithmetic operations must be of same type.");
 		die(1);
 	    } else {
-		int type = val1.getType();
+		int type = secondArg.getType();
 		if (type != Data.INT && type != Data.REAL) {
-		    dataStack.push(val2);
-		    dataStack.push(val1);
+		    dataStack.push(firstArg);
+		    dataStack.push(secondArg);
 		    error(currInst, "Values for arithmetic operations must be of type integer or real.");
 		    die(1);
 		}
 		if (type == Data.INT) {
-		    int int1 = ((Integer)val1.getValue()).intValue();
-		    int int2 = ((Integer)val2.getValue()).intValue();
+		    int int1 = ((Integer)firstArg.getValue()).intValue();
+		    int int2 = ((Integer)secondArg.getValue()).intValue();
 		    switch (opr) {
 		    case 3:
 			dataStack.push(new Data(Data.INT, new Integer(int1 + int2)));
@@ -397,8 +397,8 @@ public class PAL {
 		    default:
 		    }
 		} else {
-		    float flt1 = ((Float)val1.getValue()).floatValue();
-		    float flt2 = ((Float)val2.getValue()).floatValue();
+		    float flt1 = ((Float)firstArg.getValue()).floatValue();
+		    float flt2 = ((Float)secondArg.getValue()).floatValue();
 		    switch (opr) {
 		    case 3:
 			dataStack.push(new Data(Data.REAL, new Float(flt1 + flt2)));
