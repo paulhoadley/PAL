@@ -79,7 +79,7 @@ public class DataStack {
      * the stack.
      */
     public Data pop() {
-        return (Data)data.remove(--top);
+        return (Data) data.remove(--top);
     }
 
     /**
@@ -89,7 +89,7 @@ public class DataStack {
      * the stack.
      */
     public Data peek() {
-        return (Data)data.get(top - 1);
+        return (Data) data.get(top - 1);
     }
 
     /**
@@ -106,7 +106,7 @@ public class DataStack {
             throw new IndexOutOfBoundsException("PAL address out of bounds.");
         }
 
-        return (Data)data.get(address);
+        return (Data) data.get(address);
     }
 
     /**
@@ -195,7 +195,7 @@ public class DataStack {
 
         for (int i = 0;i < levelDiff;i++) {
             // Extract the static link from the stack mark.
-            result = ((Integer)get(result - 4).getValue()).intValue();
+            result = ((Integer) get(result - 4).getValue()).intValue();
         }
 
         result += offset;
