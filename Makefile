@@ -50,6 +50,11 @@ JAROPTS=	-cfm
 
 ECHO=		/usr/ucb/echo
 
+PS2PDF=		/usr/local/ghostscript-6.53/lib/ps2pdf
+DVIPS=		/usr/local/bin/dvips
+LATEX=		/usr/local/bin/latex
+GPIC=		/usr/local/bin/gpic
+
 SRC=		$(wildcard *.java)
 SIMPLETESTS=	$(filter-out %.out %.ref test/CVS test/interactive, $(wildcard test/*))
 INPUTTESTS=	$(filter-out %.in %.out %.ref test/interactive/CVS, $(wildcard test/interactive/*))
@@ -70,23 +75,15 @@ PAL.class:DataStack.class Data.class Code.class Mnemonic.class
 
 DataStack.class:Data.class
 
-
-
-
-###  This won't work yet.  Need to find another way to get the pic in.
-
 stackframe.tex:	stackframe.pic
-	gpic -t stackframe.pic > stackframe.tex
+	${GPIC} -t stackframe.pic > stackframe.tex
 
 PAL.pdf:	PAL.tex stackframe.tex
-	latex PAL.tex
-	latex PAL.tex
-	latex PAL.tex
-	dvips PAL.dvi -o PAL.ps
-	ps2pdf PAL.ps
-
-
-
+	${LATEX} PAL.tex
+	${LATEX} PAL.tex
+	${LATEX} PAL.tex
+	${DVIPS} PAL.dvi -Ppdf -o PAL.ps
+	${PS2PDF} PAL.ps
 
 .PHONY: clean
 clean:
@@ -98,6 +95,8 @@ clean:
 	rm -f ${JARFILE}
 	rm -f jar-manifest
 	rm -f ${TARBALL}
+	rm -f PAL.aux PAL.dvi PAL.lof PAL.log PAL.lot PAL.pdf PAL.ps PAL.toc
+	rm -f stackframe.tex
 
 .PHONY: docs
 docs:
