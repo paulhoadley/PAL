@@ -118,7 +118,10 @@ public class PAL {
 
             //Set up the input reader.
 	    pushBack = new PushbackReader(new InputStreamReader(System.in));
-            inputReader = new BufferedReader(pushBack);
+            //Note: the internal buffer of the BufferedReader is set to
+            //1 (the smallest possible) so that it won't buffer up to
+            //EOF, thereby confusing OPR 19.
+            inputReader = new BufferedReader(pushBack, 1);
 	} catch (IOException e) {
 	    System.err.println(e);
 	}
