@@ -88,11 +88,11 @@ test-ref:
 
 # Build the .ref files for each of the SIMPLETESTS
 	@${ECHO} -n "Creating .ref files for simple tests..."
-	@$(foreach test, ${SIMPLETESTS}, ${JAVA} PAL ${test} > ${test}.ref 2>&1;)
+	-@$(foreach test, ${SIMPLETESTS}, ${JAVA} PAL ${test} > ${test}.ref 2>&1;)
 	@${ECHO} "Done."
 
 # Build the .ref files for each of the INPUTTESTS
 	@${ECHO} -n "Creating .ref files for interactive tests..."
-	@$(foreach test, ${INPUTTESTS}, ${JAVA} PAL ${test} < ${test}.in > ${test}.ref 2>&1;)
+	-@$(foreach test, ${INPUTTESTS}, ${JAVA} PAL ${test} < ${test}.in > ${test}.ref 2>&1;)
 	@${ECHO} "Done."
 	@${ECHO} "*** Remember to commit the new *.ref files to CVS. ***"
