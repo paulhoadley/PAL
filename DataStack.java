@@ -65,8 +65,9 @@ public class DataStack {
 
         data.add(datum);
 
-        if(maxSize == 0 || top < maxSize)
+        if (maxSize == 0 || top < maxSize) {
             return;
+        }
 
         throw new OutOfMemoryError("PAL Stack out of memory.");
     }
@@ -101,8 +102,9 @@ public class DataStack {
      * address is out of bounds.
      */
     public Data get(int address) throws IndexOutOfBoundsException {
-        if(address < 0 || address >= top)
+        if (address < 0 || address >= top) {
             throw new IndexOutOfBoundsException("PAL address out of bounds.");
+        }
 
         return (Data)data.get(address);
     }
@@ -135,10 +137,11 @@ public class DataStack {
      * advance the TOS pointer beyond the limit of the stack memory.
      */
     public void incTop(int amount) throws OutOfMemoryError {
-        if((maxSize != 0) && (amount + top > maxSize))
+        if ((maxSize != 0) && (amount + top > maxSize)) {
             throw new OutOfMemoryError("PAL Stack out of memory");
+        }
 
-        for(int i = 0;i < amount;i++) {
+        for (int i = 0;i < amount;i++) {
             data.add(new Data(Data.UNDEF, null));
             top++;
         }
@@ -218,7 +221,7 @@ public class DataStack {
      */
     public String toString() {
         String result = new String();
-        for(int i = top - 1;i >= 0;i--) {
+        for (int i = top - 1;i >= 0;i--) {
             result += get(i) + "\n";
         }
 
