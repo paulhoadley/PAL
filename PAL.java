@@ -609,6 +609,21 @@ public class PAL {
 	    // Push boolean false on TOS
 	    dataStack.push(new Data(Data.BOOL, new Boolean(false)));
 	    break;
+	case 19:
+	    // Test for EOF.
+	    try {
+		PushbackInputStream pb = new PushbackInputStream(System.in);
+		int nextByte = pb.read();
+		if (nextByte == -1) {
+		    dataStack.push(new Data(Data.BOOL, new Boolean(true)));
+		} else {
+		    dataStack.push(new Data(Data.BOOL, new Boolean(false)));
+		    pb.unread(nextByte);
+		}
+	    } catch (IOException e) {
+		System.err.println(e);
+	    }
+	    break;
 	case 20:
 	    // Pop value on TOS and print it.
 	    if (dataStack.peek().getType() == Data.BOOL ||
