@@ -228,9 +228,67 @@ public class PAL {
                 dataStack.push((Data)loadedVal.clone());
 
                 break;
+            case Mnemonic.LDV:
+                if(!(o instanceof Integer)) {
+                    error(nextInst, "Argument to LDV must be an integer");
+                    die(1);
+                }
+
+                loadedVal = dataStack.get(nextInst.getFirst(), ((Integer)o).intValue());
+
+                dataStack.push((Data)loadedVal.clone());
+
+                break;
+            case Mnemonic.LDU:
+                dataStack.push(new Data(Data.UNDEF, null));
+
+                break;
 	    case Mnemonic.OPR:
 		doOperation(nextInst);
 		break;
+            case Mnemonic.STI:
+                tos = dataStack.pop();
+
+                if(tos.getType() != Data.INT) {
+                    dataStack.push(tos);
+                    error(nextInst, "STI - top of stack must be an integer.");
+                    die(1);
+                }
+
+                Data storeVal = dataStack.pop();
+                Data storeLocation = dataStack.get(((Integer)tos.getValue()).intValue());
+
+                storeLocation.setType(storeVal.getType());
+                storeLocation.setValue(storeVal.getValue());
+
+                break;
+            case Mnemonic.STO:
+                if(!(o instanceof Integer)) {
+                    error(nextInst, "Argument to STO must be an integer.");
+                    die(1);
+                }
+
+                storeVal = dataStack.pop();
+                storeLocation = dataStack.get(nextInst.getFirst(), ((Integer)o).intValue());
+
+                storeLocation.setType(storeVal.getType());
+                storeLocation.setValue(storeVal.getValue());
+
+                break;
+            case Mnemonic.REH:
+                if(!(o instanceof Integer)) {
+                    error(nextInst, "Argument to REH must be an integer.");
+                    die(1);
+                }
+
+                // Get the location of the nearest exception handler pointer.
+                address = dataStack.getAddress(1, 0) - 1;
+                storeLocation = dataStack.get(address);
+
+                storeLocation.setType(Data.INT);
+                storeLocation.setValue(o);
+
+                break;
 	    default:
 		System.out.println(nextInst.getMnemonic() + ": not implemented.");
 	    }
