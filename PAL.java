@@ -714,14 +714,19 @@ public class PAL {
     }
 
     /**
-     * Make an Object from a String.  Because the type of the third
-     * field in a single instruction is not pre-defined, we need to be
-     * able to expect an integer, a float or a string.  To simplify
-     * the storage, we handle each of them as an Object anyway, so
-     * ints and floats are wrapped by Integer and Float respectively.
+     * Make an <code>Object</code> from a <code>String</code>.
+     * Because the type of the third field in a single instruction is
+     * not pre-defined, we need to be able to expect an
+     * <code>int</code>, a <code>float</code> or a
+     * <code>String</code>.  To simplify the storage, we handle each
+     * of them as an <code>Object</code> anyway, so <code>int</code>s
+     * and <code>float</code>s are wrapped by <code>Integer</code> and
+     * <code>Float</code> respectively.
      *
-     * @param input A String.
-     * @return An Object which is either a String, Integer or Float.
+     * @param input A <code>String</code>.
+     * @return An <code>Object</code> which is either a
+     * <code>String,</code> <code>Integer</code> or
+     * <code>Float</code>.
      */
     private Object makeObject(String input) {
 	// We are expecting an integer, real or string.
