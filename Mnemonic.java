@@ -15,11 +15,14 @@ public class Mnemonic {
     /**
      * A lexicographically ordered array of the available mnemonics.
      */
-    private static String[] mnemonicList = {"CAL", "INC", "JIF", "JMP",
-                                            "LCI", "LCR", "LCS", "LDA",
-                                            "LDI", "LDU", "LDV", "MST",
-                                            "OPR", "RDI", "RDR", "REH",
-                                            "SIG", "STI", "STO"};
+    private static final String[] mnemonicList = {"CAL", "INC", "JIF", "JMP",
+                                                  "LCI", "LCR", "LCS", "LDA",
+                                                  "LDI", "LDU", "LDV", "MST",
+                                                  "OPR", "RDI", "RDR", "REH",
+                                                  "SIG", "STI", "STO"};
+
+    // Important: The following constants must correspond to their
+    // index in the "mnemonicList" array.
 
     /** Constant to represent the <code>CAL</code> mnemonic. */
     public static final int CAL = 0;
