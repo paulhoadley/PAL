@@ -136,6 +136,14 @@ public class PAL {
 	    Object o = currInst.getSecond();
 
 	    switch (Mnemonic.mnemonicToInt(currInst.getMnemonic())) {
+            case Mnemonic.CAL:
+                Data returnPoint = dataStack.get(dataStack.getTop() - currInst.getFirst() - 2);
+                returnPoint.setType(Data.INT);
+                returnPoint.setValue(new Integer(pc));
+
+                pc = ((Integer)currInst.getSecond()).intValue();
+
+                break;
 	    case Mnemonic.INC:
 		if (!(o instanceof Integer)) {
 		    error(currInst, "Argument to INC must be an integer.");
@@ -271,6 +279,13 @@ public class PAL {
                 dataStack.push(new Data(Data.UNDEF, null));
 
                 break;
+            case Mnemonic.MST:
+                Data staticLink = dataStack.get(currInst.getFirst(), -4);
+                int dynamicLink = dataStack.getAddress(0, 0);
+
+                dataStack.markStack(((Integer)staticLink.getValue()).intValue(), dynamicLink);
+
+                break;
 	    case Mnemonic.OPR:
 		doOperation(currInst);
 		break;
@@ -290,10 +305,10 @@ public class PAL {
                     Data storeLocation = dataStack.get(currInst.getFirst(),  ((Integer)currInst.getSecond()).intValue());
 		    storeLocation.setType(Data.INT);
                     storeLocation.setValue(new Integer(intVal));
-		} catch (IOException e1) {
-		    System.err.println(e1);
-		} catch (NumberFormatException e2) {
-		    error(currInst, "RDI: expecting integer, got " + intLine);
+                } catch (IOException e1) {
+                    System.err.println(e1);
+                } catch (NumberFormatException e2) {
+                    error(currInst, "RDI: expecting integer, got " + intLine);
 		    die(1);
 		}
 		break;
@@ -320,6 +335,20 @@ public class PAL {
 		    die(1);
 		}
 		break;
+            case Mnemonic.REH:
+                if(!(o instanceof Integer)) {
+                    error(currInst, "Argument to REH must be an integer.");
+                    die(1);
+                }
+
+                // Get the location of the nearest exception handler pointer.
+                address = dataStack.getAddress(0, -1);
+                Data storeLocation = dataStack.get(address);
+
+                storeLocation.setType(Data.INT);
+                storeLocation.setValue(o);
+
+                break;
             case Mnemonic.STI:
                 tos = dataStack.pop();
 
@@ -330,7 +359,7 @@ public class PAL {
                 }
 
                 Data storeVal = dataStack.pop();
-                Data storeLocation = dataStack.get(((Integer)tos.getValue()).intValue());
+                storeLocation = dataStack.get(((Integer)tos.getValue()).intValue());
 
                 storeLocation.setType(storeVal.getType());
                 storeLocation.setValue(storeVal.getValue());
@@ -347,20 +376,6 @@ public class PAL {
 
                 storeLocation.setType(storeVal.getType());
                 storeLocation.setValue(storeVal.getValue());
-
-                break;
-            case Mnemonic.REH:
-                if(!(o instanceof Integer)) {
-                    error(currInst, "Argument to REH must be an integer.");
-                    die(1);
-                }
-
-                // Get the location of the nearest exception handler pointer.
-                address = dataStack.getAddress(0, 0) - 1;
-                storeLocation = dataStack.get(address);
-
-                storeLocation.setType(Data.INT);
-                storeLocation.setValue(o);
 
                 break;
 	    default:

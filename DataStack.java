@@ -190,6 +190,15 @@ public class DataStack {
     }
 
     /**
+     * Get the address of the stack top.
+     *
+     * @return The absolute address of the top element.
+     */
+    public int getTop() {
+        return top;
+    }
+
+    /**
      * Returns a <code>String</code> representation of the object.
      * Effectively, this is a dump of the stack from the uppermost
      * element to the lowermost.
