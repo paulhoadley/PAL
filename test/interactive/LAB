@@ -1,0 +1,556 @@
+JMP 0 354 --Jump to start of main program
+LDV 0 0 --Load "n".
+LCI 0 1 
+OPR 0 15 
+JIF 0 9 --Test "if" condition
+LCI 0 1 
+OPR 0 1 
+JMP 0 24 --Leave "if" statement.
+LDV 0 0 --Load "n".
+LCI 0 12 
+OPR 0 14 
+JIF 0 16 --Test "elsif" condition
+LCI 0 99999999 
+OPR 0 1 
+JMP 0 24 --Leave "if" statement.
+LDV 0 0 --Load "n".
+MST 1 0 
+LDV 0 0 --Load "n".
+LCI 0 1 
+OPR 0 4 
+CAL 1 2 --Call function "factorial".
+OPR 0 5 
+OPR 0 1 
+LCS 0 'Error : function "factorial" failed to execute a return statement' 
+OPR 0 20 
+OPR 0 21 
+JMP 0 0 
+INC 0 1 --Allocate space for local variables
+LDV 0 0 --Load "x".
+LCR 0 3.14159265359 
+OPR 0 14 
+JIF 0 41 --Test "while" condition.
+LDV 0 0 --Load "x".
+LCI 0 2 
+OPR 0 25 
+LCR 0 3.14159265359 
+OPR 0 5 
+OPR 0 4 
+STO 0 0 --Assign to variable "x".
+JMP 0 29 --Jump to top of "while" loop
+LDV 0 0 --Load "x".
+LCR 0 3.14159265359 
+OPR 0 2 
+OPR 0 12 
+JIF 0 54 --Test "while" condition.
+LDV 0 0 --Load "x".
+LCI 0 2 
+OPR 0 25 
+LCR 0 3.14159265359 
+OPR 0 5 
+OPR 0 3 
+STO 0 0 --Assign to variable "x".
+JMP 0 41 --Jump to top of "while" loop
+LCI 0 0 
+OPR 0 25 
+STO 0 1 --Assign to variable "result".
+LCI 0 0 
+LDV 1 0 --Load "accuracy".
+LDV 0 2 --Load control variable of for loop
+LDV 0 3 --Load bound of for loop
+OPR 0 15 --For loop - test if controlvar <= UB
+JIF 0 111 --Terminate for loop if out of range
+LDV 0 2 --Load "i".
+OPR 0 9 
+OPR 0 16 
+JIF 0 87 --Test "if" condition
+LDV 0 1 --Load "result".
+LDV 0 0 --Load "x".
+LCI 0 2 
+LDV 0 2 --Load "i".
+OPR 0 5 
+LCI 0 1 
+OPR 0 3 
+OPR 0 7 
+MST 1 0 
+LCI 0 2 
+LDV 0 2 --Load "i".
+OPR 0 5 
+LCI 0 1 
+OPR 0 3 
+CAL 1 2 --Call function "factorial".
+OPR 0 25 
+OPR 0 6 
+OPR 0 3 
+STO 0 1 --Assign to variable "result".
+JMP 0 106 --Leave "if" statement.
+LDV 0 1 --Load "result".
+LDV 0 0 --Load "x".
+LCI 0 2 
+LDV 0 2 --Load "i".
+OPR 0 5 
+LCI 0 1 
+OPR 0 3 
+OPR 0 7 
+MST 1 0 
+LCI 0 2 
+LDV 0 2 --Load "i".
+OPR 0 5 
+LCI 0 1 
+OPR 0 3 
+CAL 1 2 --Call function "factorial".
+OPR 0 25 
+OPR 0 6 
+OPR 0 4 
+STO 0 1 --Assign to variable "result".
+LDV 0 2 --For loop:increment/decrement controlvar
+LCI 0 1 
+OPR 0 3 
+STO 0 2 --Store control variable for next iteration
+JMP 0 59 
+OPR 0 24 --For loop: drop controlvar and bound.
+OPR 0 24 
+LDV 0 1 --Load "result".
+OPR 0 1 
+LCS 0 'Error : function "sin" failed to execute a return statement' 
+OPR 0 20 
+OPR 0 21 
+JMP 0 0 
+INC 0 1 --Allocate space for local variables
+LDV 0 0 --Load "x".
+LCR 0 3.14159265359 
+OPR 0 14 
+JIF 0 132 --Test "while" condition.
+LDV 0 0 --Load "x".
+LCI 0 2 
+OPR 0 25 
+LCR 0 3.14159265359 
+OPR 0 5 
+OPR 0 4 
+STO 0 0 --Assign to variable "x".
+JMP 0 120 --Jump to top of "while" loop
+LDV 0 0 --Load "x".
+LCR 0 3.14159265359 
+OPR 0 2 
+OPR 0 12 
+JIF 0 145 --Test "while" condition.
+LDV 0 0 --Load "x".
+LCI 0 2 
+OPR 0 25 
+LCR 0 3.14159265359 
+OPR 0 5 
+OPR 0 3 
+STO 0 0 --Assign to variable "x".
+JMP 0 132 --Jump to top of "while" loop
+LCI 0 1 
+OPR 0 25 
+STO 0 1 --Assign to variable "result".
+LCI 0 1 
+LDV 1 0 --Load "accuracy".
+LDV 0 2 --Load control variable of for loop
+LDV 0 3 --Load bound of for loop
+OPR 0 15 --For loop - test if controlvar <= UB
+JIF 0 194 --Terminate for loop if out of range
+LDV 0 2 --Load "i".
+OPR 0 9 
+OPR 0 16 
+JIF 0 174 --Test "if" condition
+LDV 0 1 --Load "result".
+LDV 0 0 --Load "x".
+LCI 0 2 
+LDV 0 2 --Load "i".
+OPR 0 5 
+OPR 0 7 
+MST 1 0 
+LCI 0 2 
+LDV 0 2 --Load "i".
+OPR 0 5 
+CAL 1 2 --Call function "factorial".
+OPR 0 25 
+OPR 0 6 
+OPR 0 3 
+STO 0 1 --Assign to variable "result".
+JMP 0 189 --Leave "if" statement.
+LDV 0 1 --Load "result".
+LDV 0 0 --Load "x".
+LCI 0 2 
+LDV 0 2 --Load "i".
+OPR 0 5 
+OPR 0 7 
+MST 1 0 
+LCI 0 2 
+LDV 0 2 --Load "i".
+OPR 0 5 
+CAL 1 2 --Call function "factorial".
+OPR 0 25 
+OPR 0 6 
+OPR 0 4 
+STO 0 1 --Assign to variable "result".
+LDV 0 2 --For loop:increment/decrement controlvar
+LCI 0 1 
+OPR 0 3 
+STO 0 2 --Store control variable for next iteration
+JMP 0 150 
+OPR 0 24 --For loop: drop controlvar and bound.
+OPR 0 24 
+LDV 0 1 --Load "result".
+OPR 0 1 
+LCS 0 'Error : function "cos" failed to execute a return statement' 
+OPR 0 20 
+OPR 0 21 
+JMP 0 0 
+INC 0 1 --Allocate space for local variables
+LCI 0 0 
+OPR 0 25 
+STO 0 1 --Assign to variable "result".
+LCI 0 0 
+LDV 1 0 --Load "accuracy".
+LDV 0 2 --Load control variable of for loop
+LDV 0 3 --Load bound of for loop
+OPR 0 15 --For loop - test if controlvar <= UB
+JIF 0 228 --Terminate for loop if out of range
+LDV 0 1 --Load "result".
+LDV 0 0 --Load "x".
+LDV 0 2 --Load "i".
+OPR 0 7 
+MST 1 0 
+LDV 0 2 --Load "i".
+CAL 1 2 --Call function "factorial".
+OPR 0 25 
+OPR 0 6 
+OPR 0 3 
+STO 0 1 --Assign to variable "result".
+LDV 0 2 --For loop:increment/decrement controlvar
+LCI 0 1 
+OPR 0 3 
+STO 0 2 --Store control variable for next iteration
+JMP 0 208 
+OPR 0 24 --For loop: drop controlvar and bound.
+OPR 0 24 
+LDV 0 1 --Load "result".
+OPR 0 1 
+LCS 0 'Error : function "exp" failed to execute a return statement' 
+OPR 0 20 
+OPR 0 21 
+JMP 0 0 
+INC 0 4 --Allocate space for local variables
+LDV 0 0 --Load "x".
+LCI 0 0 
+OPR 0 25 
+OPR 0 15 
+JIF 0 254 --Test "if" condition
+LCS 0 'ln(' 
+LDV 0 0 --Load "x".
+OPR 0 28 
+LCS 0 ') is undefined.' 
+OPR 0 8 
+OPR 0 8 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+LCI 0 0 
+OPR 0 25 
+OPR 0 1 
+JMP 0 254 --Leave "if" statement.
+LDV 1 0 --Load "accuracy".
+LCI 0 100 
+OPR 0 5 
+STO 0 4 --Assign to variable "lnaccuracy".
+LCI 0 1 
+OPR 0 25 
+LCI 0 1 
+OPR 0 25 
+LDV 0 0 --Load "x".
+OPR 0 6 
+OPR 0 3 
+STO 0 1 --Assign to variable "result".
+LDV 0 0 --Load "x".
+LCI 0 1 
+OPR 0 25 
+OPR 0 4 
+LDV 0 4 --Load "lnaccuracy".
+LCI 0 1 
+OPR 0 3 
+OPR 0 25 
+OPR 0 6 
+STO 0 2 --Assign to variable "stepsize".
+LCI 0 1 
+OPR 0 25 
+STO 0 3 --Assign to variable "xval".
+LCI 0 1 
+LDV 0 4 --Load "lnaccuracy".
+LDV 0 5 --Load control variable of for loop
+LDV 0 6 --Load bound of for loop
+OPR 0 15 --For loop - test if controlvar <= UB
+JIF 0 301 --Terminate for loop if out of range
+LDV 0 3 --Load "xval".
+LDV 0 2 --Load "stepsize".
+OPR 0 3 
+STO 0 3 --Assign to variable "xval".
+LDV 0 1 --Load "result".
+LCI 0 2 
+OPR 0 25 
+LDV 0 3 --Load "xval".
+OPR 0 6 
+OPR 0 3 
+STO 0 1 --Assign to variable "result".
+LDV 0 5 --For loop:increment/decrement controlvar
+LCI 0 1 
+OPR 0 3 
+STO 0 5 --Store control variable for next iteration
+JMP 0 281 
+OPR 0 24 --For loop: drop controlvar and bound.
+OPR 0 24 
+LDV 0 1 --Load "result".
+LDV 0 2 --Load "stepsize".
+OPR 0 5 
+LCI 0 2 
+OPR 0 25 
+OPR 0 6 
+STO 0 1 --Assign to variable "result".
+LDV 0 1 --Load "result".
+OPR 0 1 
+LCS 0 'Error : function "ln" failed to execute a return statement' 
+OPR 0 20 
+OPR 0 21 
+JMP 0 0 
+INC 0 2 --Allocate space for local variables
+LDV 0 0 --Load "base".
+LCI 0 0 
+OPR 0 25 
+OPR 0 12 
+JIF 0 329 --Test "if" condition
+LCS 0 'base of exponent must be >= 0' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+LCI 0 0 
+OPR 0 25 
+OPR 0 1 
+JMP 0 338 --Leave "if" statement.
+LDV 0 0 --Load "base".
+LCI 0 0 
+OPR 0 25 
+OPR 0 10 
+JIF 0 338 --Test "elsif" condition
+LCI 0 0 
+OPR 0 25 
+OPR 0 1 
+JMP 0 338 --Leave "if" statement.
+MST 1 0 
+LDV 0 0 --Load "base".
+CAL 1 236 --Call function "ln".
+STO 0 2 --Assign to variable "logbase".
+LDV 0 2 --Load "logbase".
+LDV 0 1 --Load "exponent".
+OPR 0 5 
+STO 0 3 --Assign to variable "epow".
+MST 1 0 
+LDV 0 3 --Load "epow".
+CAL 1 202 --Call function "exp".
+OPR 0 1 
+LCS 0 'Error : function "pow" failed to execute a return statement' 
+OPR 0 20 
+OPR 0 21 
+JMP 0 0 
+INC 0 4 --Allocate space for local variables
+LCI 0 1 
+OPR 0 2 
+STO 0 0 --Assign to variable "accuracy".
+LCI 0 0 
+OPR 0 25 
+STO 0 2 --Assign to variable "input".
+LCI 0 0 
+OPR 0 25 
+STO 0 3 --Assign to variable "input2".
+LCS 0 'Welcome to "LAB".' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+LDV 0 0 --Load "accuracy".
+LCI 0 0 
+OPR 0 12 
+JIF 0 376 --Test "while" condition.
+LCS 0 'Enter an int >= 0 for the accuracy of the approximations.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+RDI 0 0 
+JMP 0 367 --Jump to top of "while" loop
+LCS 0 '"LAB" menu.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+LCS 0 '1. Change accuracy (currently ' 
+LDV 0 0 --Load "accuracy".
+OPR 0 27 
+LCS 0 ').' 
+OPR 0 8 
+OPR 0 8 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+LCS 0 '2. Calculate sine.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+LCS 0 '3. Calculate cosine.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+LCS 0 '4. Calculate natural exponential.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+LCS 0 '5. Calculate natural log.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+LCS 0 '6. Calculate power.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+LCS 0 '7. Exit.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+RDI 0 1 
+LDV 0 1 --Load "selection".
+LCI 0 1 
+OPR 0 10 
+JIF 0 423 --Test "if" condition
+LCI 0 1 
+OPR 0 2 
+STO 0 0 --Assign to variable "accuracy".
+LDV 0 0 --Load "accuracy".
+LCI 0 0 
+OPR 0 12 
+JIF 0 422 --Test "while" condition.
+LCS 0 'Enter an int >= 0 for the accuracy of the approximations.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+RDI 0 0 
+JMP 0 413 --Jump to top of "while" loop
+JMP 0 541 --Leave "if" statement.
+LDV 0 1 --Load "selection".
+LCI 0 2 
+OPR 0 10 
+JIF 0 445 --Test "elsif" condition
+LCS 0 'Enter number to calculate sine of.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+RDR 0 2 
+LCS 0 'sine(' 
+LDV 0 2 --Load "input".
+OPR 0 28 
+LCS 0 ') = ' 
+MST 0 0 
+LDV 0 2 --Load "input".
+CAL 1 28 --Call function "sin".
+OPR 0 28 
+OPR 0 8 
+OPR 0 8 
+OPR 0 8 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+JMP 0 541 --Leave "if" statement.
+LDV 0 1 --Load "selection".
+LCI 0 3 
+OPR 0 10 
+JIF 0 467 --Test "elsif" condition
+LCS 0 'Enter number to calculate cosine of.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+RDR 0 2 
+LCS 0 'cosine(' 
+LDV 0 2 --Load "input".
+OPR 0 28 
+LCS 0 ') = ' 
+MST 0 0 
+LDV 0 2 --Load "input".
+CAL 1 119 --Call function "cos".
+OPR 0 28 
+OPR 0 8 
+OPR 0 8 
+OPR 0 8 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+JMP 0 541 --Leave "if" statement.
+LDV 0 1 --Load "selection".
+LCI 0 4 
+OPR 0 10 
+JIF 0 489 --Test "elsif" condition
+LCS 0 'Enter number to calculate exp of.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+RDR 0 2 
+LCS 0 'exp(' 
+LDV 0 2 --Load "input".
+OPR 0 28 
+LCS 0 ') = ' 
+MST 0 0 
+LDV 0 2 --Load "input".
+CAL 1 202 --Call function "exp".
+OPR 0 28 
+OPR 0 8 
+OPR 0 8 
+OPR 0 8 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+JMP 0 541 --Leave "if" statement.
+LDV 0 1 --Load "selection".
+LCI 0 5 
+OPR 0 10 
+JIF 0 511 --Test "elsif" condition
+LCS 0 'Enter number to calculate ln of.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+RDR 0 2 
+LCS 0 'ln(' 
+LDV 0 2 --Load "input".
+OPR 0 28 
+LCS 0 ') = ' 
+MST 0 0 
+LDV 0 2 --Load "input".
+CAL 1 236 --Call function "ln".
+OPR 0 28 
+OPR 0 8 
+OPR 0 8 
+OPR 0 8 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+JMP 0 541 --Leave "if" statement.
+LDV 0 1 --Load "selection".
+LCI 0 6 
+OPR 0 10 
+JIF 0 541 --Test "elsif" condition
+LCS 0 'Enter base of exponential.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+RDR 0 2 
+LCS 0 'Enter exponent.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+RDR 0 3 
+LDV 0 2 --Load "input".
+OPR 0 28 
+LCS 0 ' ** ' 
+LDV 0 3 --Load "input2".
+OPR 0 28 
+LCS 0 ' = ' 
+MST 0 0 
+LDV 0 2 --Load "input".
+LDV 0 3 --Load "input2".
+CAL 2 316 --Call function "pow".
+OPR 0 28 
+OPR 0 8 
+OPR 0 8 
+OPR 0 8 
+OPR 0 8 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+JMP 0 541 --Leave "if" statement.
+LDV 0 2 --Load "input".
+LDV 0 2 --Load "input".
+OPR 0 4 
+STO 0 2 --Assign to variable "input".
+LDV 0 2 --Load "input".
+STO 0 3 --Assign to variable "input2".
+LDV 0 1 --Load "selection".
+LCI 0 7 
+OPR 0 10 
+JIF 0 552 --Test exit condition.
+JMP 0 553 --Exit from loop.
+JMP 0 376 --Jump to top of loop.
+LCS 0 'thankyou for using "LAB".' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+JMP 0 0 

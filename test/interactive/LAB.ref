@@ -1,0 +1,65 @@
+Welcome to "LAB".
+Enter an int >= 0 for the accuracy of the approximations.
+"LAB" menu.
+1. Change accuracy (currently 12).
+2. Calculate sine.
+3. Calculate cosine.
+4. Calculate natural exponential.
+5. Calculate natural log.
+6. Calculate power.
+7. Exit.
+Enter number to calculate sine of.
+sine(0.5235988) = 0.5
+"LAB" menu.
+1. Change accuracy (currently 12).
+2. Calculate sine.
+3. Calculate cosine.
+4. Calculate natural exponential.
+5. Calculate natural log.
+6. Calculate power.
+7. Exit.
+Enter number to calculate cosine of.
+cosine(1.0471976) = 0.4999999
+"LAB" menu.
+1. Change accuracy (currently 12).
+2. Calculate sine.
+3. Calculate cosine.
+4. Calculate natural exponential.
+5. Calculate natural log.
+6. Calculate power.
+7. Exit.
+Enter number to calculate exp of.
+exp(1.0) = 2.718282
+"LAB" menu.
+1. Change accuracy (currently 12).
+2. Calculate sine.
+3. Calculate cosine.
+4. Calculate natural exponential.
+5. Calculate natural log.
+6. Calculate power.
+7. Exit.
+Enter number to calculate ln of.
+ln(20.085537) = 3.000021
+"LAB" menu.
+1. Change accuracy (currently 12).
+2. Calculate sine.
+3. Calculate cosine.
+4. Calculate natural exponential.
+5. Calculate natural log.
+6. Calculate power.
+7. Exit.
+Enter base of exponential.
+Enter exponent.
+7.0 ** 3.0 = 340.55777
+"LAB" menu.
+1. Change accuracy (currently 12).
+2. Calculate sine.
+3. Calculate cosine.
+4. Calculate natural exponential.
+5. Calculate natural log.
+6. Calculate power.
+7. Exit.
+thankyou for using "LAB".
+
+### Execution of PAL-machine simulator complete
+
