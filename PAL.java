@@ -1095,7 +1095,7 @@ public class PAL {
      * Simple usage information.
      */
     private static void usage() {
-	System.out.println("usage: [java] PAL [filename]");
+	System.out.println("usage: java -jar PAL.jar [filename]");
 	return;
     }
 }
