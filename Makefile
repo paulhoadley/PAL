@@ -12,7 +12,7 @@ JAVADOCOPTS=	-version -author -windowtitle "PAL Machine Simulator" \
 		-d ${DOCDIR} -private
 
 SRC=		$(wildcard *.java)
-TESTFILES=	$(wildcard test/*)
+TESTFILES=	$(filter-out test/CVS, $(wildcard test/*))
 
 %.class:	%.java
 	$(JAVAC) $<
