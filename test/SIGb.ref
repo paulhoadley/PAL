@@ -1,4 +1,11 @@
-Exception 0
 
-### Execution of PAL-machine simulator complete
+Runtime Error:
+test/SIGb:2:Exception #0 never handled!
+SIG 0 0
 
+Stack dump:
+----------
+0
+0
+0
+0

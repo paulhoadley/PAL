@@ -1,6 +1,6 @@
 
 Runtime Error:
-test/SIGa:1:Exception never handled!
+test/SIGa:1:Exception #0 never handled!
 SIG 0 0
 
 Stack dump:
