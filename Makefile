@@ -37,7 +37,7 @@ docs:
 .PHONY: test
 test:
 	rm -f test.out
-	$(foreach test, ${TESTFILES}, ${JAVA} PAL ${test} >> test.out 2>&1;)
+	@$(foreach test, ${TESTFILES}, ${JAVA} PAL ${test} >> test.out 2>&1;)
 	diff test.out test.ref
 
 # Re-make the reference for the test files.
