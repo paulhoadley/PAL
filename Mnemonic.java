@@ -20,25 +20,28 @@ public class Mnemonic {
                                             "OPR", "RDI", "RDR", "REH",
                                             "SIG", "STI", "STO"};
 
-    public static final int CAL = mnemonicToInt("CAL");
-    public static final int INC = mnemonicToInt("INC");
-    public static final int JIF = mnemonicToInt("JIF");
-    public static final int JMP = mnemonicToInt("JMP");
-    public static final int LCI = mnemonicToInt("LCI");
-    public static final int LCR = mnemonicToInt("LCR");
-    public static final int LCS = mnemonicToInt("LCS");
-    public static final int LDA = mnemonicToInt("LDA");
-    public static final int LDI = mnemonicToInt("LDI");
-    public static final int LDU = mnemonicToInt("LDU");
-    public static final int LDV = mnemonicToInt("LDV");
-    public static final int MST = mnemonicToInt("MST");
-    public static final int OPR = mnemonicToInt("OPR");
-    public static final int RDI = mnemonicToInt("RDI");
-    public static final int RDR = mnemonicToInt("RDR");
-    public static final int REH = mnemonicToInt("REH");
-    public static final int SIG = mnemonicToInt("SIG");
-    public static final int STI = mnemonicToInt("STI");
-    public static final int STO = mnemonicToInt("STO");
+    /**
+     * Be sure to change these constants when the mnemonics change.
+     */
+    public static final int CAL = 0;
+    public static final int INC = 1;
+    public static final int JIF = 2;
+    public static final int JMP = 3;
+    public static final int LCI = 4;
+    public static final int LCR = 5;
+    public static final int LCS = 6;
+    public static final int LDA = 7;
+    public static final int LDI = 8;
+    public static final int LDU = 9;
+    public static final int LDV = 10;
+    public static final int MST = 11;
+    public static final int OPR = 12;
+    public static final int RDI = 13;
+    public static final int RDR = 14;
+    public static final int REH = 15;
+    public static final int SIG = 16;
+    public static final int STI = 17;
+    public static final int STO = 18;
 
     public static int mnemonicToInt(String m) {
 
