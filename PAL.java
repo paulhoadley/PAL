@@ -13,13 +13,14 @@ public class PAL {
     private static String filename = "CODE";
 
     /** A constant for code and data memory limits. */
-    private final int CORESIZE = 1000;
+    private final int CODESIZE = 1000;
+    private final int DATASIZE = 500;
 
     /** Memory for the instructions. */
     private ArrayList codeMem;
 
     /** Stack for data. */
-    private Stack dataStack;
+    private DataStack dataStack;
 
     // Booleans for command line options.
     private static boolean sOpt = false;
@@ -57,8 +58,8 @@ public class PAL {
      */
     public PAL() {
 	// Create the code memory.
-	codeMem = new ArrayList();
-	dataStack = new Stack();
+	codeMem = new ArrayList(CODESIZE);
+	dataStack = new DataStack(DATASIZE);
 
 	try {
 	    BufferedReader br = new BufferedReader(new FileReader(filename));
@@ -123,7 +124,7 @@ public class PAL {
 	    nextInst = (Code)codeMem.get(pc);
 	    System.out.println("Current instruction: " + nextInst);
 
-	    // Objcet to pull out of nextInst.second.
+	    // Object to pull out of nextInst.second.
 	    Object o = nextInst.getSecond();
 
 	    switch (Mnemonic.mnemonicToInt(nextInst.getMnemonic())) {
@@ -132,9 +133,7 @@ public class PAL {
 		    error(nextInst, "Argument to INC must be an integer.");
                     die(1);
                 } else {
-		    for (int i = 0; i < ((Integer)o).intValue(); i++) {
-			dataStack.push(new Data(Data.UNDEF, null));
-		    }
+                    dataStack.incTop(((Integer)o).intValue());
                 }
                 break;
 	    case Mnemonic.LCI:

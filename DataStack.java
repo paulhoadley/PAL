@@ -126,7 +126,7 @@ public class DataStack {
      */
     public void incTop(int amount) throws OutOfMemoryError{
         for(int i = 0;i < amount;i++) {
-            data.set(top, new Data(Data.UNDEF, null));
+            data.add(new Data(Data.UNDEF, null));
             top++;
         }
 
