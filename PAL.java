@@ -12,6 +12,9 @@ public class PAL {
     /** The filename containing the program. */
     private static String filename = "CODE";
 
+    /** A constant for code and data memory limits. */
+    private final int CORESIZE = 1000;
+
     /** Memory for the instructions. */
     private ArrayList codeMem;
 
