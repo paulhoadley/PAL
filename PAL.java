@@ -178,11 +178,90 @@ public class PAL {
 	    die(1);
 	}
 	switch (opr) {
+	case 2:
+	    // Negate the value on TOS if it is an integer or real.
+	    Data d = dataStack.pop();
+	    if (d.getType() == Data.INT) {
+		d.setValue(new Integer(-(((Integer)d.getValue()).intValue())));
+		dataStack.push(d);
+	    } else if (d.getType() == Data.REAL) {
+		d.setValue(new Float(-(((Float)d.getValue()).floatValue())));
+		dataStack.push(d);
+	    } else {
+		dataStack.push(d);
+	    }
+	    break;
+	case 3:
+	case 4:
+	case 5:
+	case 6:
+	    // Pop values at TOS and TOS-1, add them and push result
+	    // onto TOS.
+	    Data val1 = dataStack.pop();
+	    Data val2 = dataStack.pop();
+	    if (val1.getType() != val2.getType()) {
+		error(nextInst, "Values for arithmetic operations must be of same type.");
+		die(1);
+	    } else {
+		int type = val1.getType();
+		if (type != Data.INT && type != Data.REAL) {
+		    error(nextInst, "Values for arithmetic operations must be of type integer or real.");
+		    die(1);
+		}
+		if (type == Data.INT) {
+		    int int1 = ((Integer)val1.getValue()).intValue();
+		    int int2 = ((Integer)val2.getValue()).intValue();
+		    switch (opr) {
+		    case 3:
+			dataStack.push(new Data(Data.INT, new Integer(int1 + int2)));
+			break;
+		    case 4:
+			dataStack.push(new Data(Data.INT, new Integer(int1 - int2)));
+			break;
+		    case 5:
+			dataStack.push(new Data(Data.INT, new Integer(int1 * int2)));
+			break;
+		    case 6:
+			dataStack.push(new Data(Data.INT, new Integer(int1 / int2)));
+			break;
+		    default:
+		    }
+		} else {
+		    float flt1 = ((Float)val1.getValue()).floatValue();
+		    float flt2 = ((Float)val2.getValue()).floatValue();
+		    switch (opr) {
+		    case 3:
+			dataStack.push(new Data(Data.REAL, new Float(flt1 + flt2)));
+			break;
+		    case 4:
+			dataStack.push(new Data(Data.REAL, new Float(flt1 - flt2)));
+			break;
+		    case 5:
+			dataStack.push(new Data(Data.REAL, new Float(flt1 * flt2)));
+			break;
+		    case 6:
+			dataStack.push(new Data(Data.REAL, new Float(flt1 / flt2)));
+			break;
+		    default:
+		    }
+		}
+	    }
+	    break;
+	case 17:
+	    // Push boolean true on TOS.
+	    dataStack.push(new Data(Data.BOOL, new Boolean(true)));
+	    break;
+	case 18:
+	    // Push boolean false on TOS
+	    dataStack.push(new Data(Data.BOOL, new Boolean(false)));
+	    break;
 	case 20:
-	    Object tos = dataStack.peek();
+	    // Pop value on TOS and print it.
+	    Object tos = dataStack.pop();
 	    System.out.print(((Data)tos).getValue());
 	    break;
 	case 21:
+	    // Print a newline.
 	    System.out.println();
 	    break;
 	default:
