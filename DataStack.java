@@ -119,7 +119,7 @@ public class DataStack {
     public Data get(int levelDiff, int offset) throws IndexOutOfBoundsException {
         int address = getAddress(levelDiff, offset);
 
-        return (Data)data.get(address);
+        return get(address);
     }
 
     /**
@@ -184,7 +184,7 @@ public class DataStack {
      * @param offset The offset into the target stack frame.
      * @return The absolute address for the target location.
      * @exception java.lang.IndexOutOfBoundsException if the supplied
-     * address is out of bounds.
+     * level difference is invalid.
      */
     public int getAddress(int levelDiff, int offset) throws IndexOutOfBoundsException {
         int result = frameBase;
@@ -195,9 +195,6 @@ public class DataStack {
         }
 
         result += offset;
-
-        if(result < 0 || result >= top)
-            throw new IndexOutOfBoundsException("PAL address out of bounds.");
 
         return result;
     }
