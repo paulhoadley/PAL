@@ -6,6 +6,8 @@
  * A class to represent a tagged datum.
  *
  * @version $Revision$
+ * @author Philip Roberts &lt;philip.roberts@student.adelaide.edu.au&gt;
+ * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
 public class Data implements Cloneable {
     /** The type of this datum. */

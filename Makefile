@@ -1,5 +1,8 @@
 # Makefile for PAL machine project
 #
+# Authors: Paul Hoadley <paulh@logicsquad.net>
+#          Philip Roberts <philip.roberts@student.adelaide.edu.au>
+#
 # $Id$
 
 JAVA_HOME=	/usr/local/java

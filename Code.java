@@ -6,6 +6,8 @@
  * A class to represent an instruction and its arguments or operands.
  *
  * @version $Revision$
+ * @author Philip Roberts &lt;philip.roberts@student.adelaide.edu.au&gt;
+ * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
 public class Code {
     /** 

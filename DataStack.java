@@ -10,6 +10,8 @@ import java.util.Stack;
  * An abstract data type representing the PAL data stack.
  *
  * @version $Revision$
+ * @author Philip Roberts &lt;philip.roberts@student.adelaide.edu.au&gt;
+ * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
 public class DataStack {
     /** A container for the <code>Data</code> objects. */
