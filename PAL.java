@@ -29,6 +29,9 @@ public class PAL {
     /** The program counter. */
     private int pc;
 
+    /** Input reader. */
+    private BufferedReader inputReader;
+
     /**
      * Main method for command line operation.
      *
@@ -109,6 +112,9 @@ public class PAL {
 		line = br.readLine();
 		lineno++;
 	    }
+
+            //Set up the input reader.
+            inputReader = new BufferedReader(new InputStreamReader(System.in));
 	} catch (IOException e) {
 	    System.err.println(e);
 	}
@@ -300,8 +306,10 @@ public class PAL {
 		// Read an integer from stdin
 		String intLine = "";
 		try {
-		    BufferedReader intRdr = new BufferedReader(new InputStreamReader(System.in));
-		    intLine = intRdr.readLine();
+//		    BufferedReader intRdr = new BufferedReader(new InputStreamReader(System.in));
+		    intLine = inputReader.readLine();
+
+                    System.out.println(intLine);
 		    if (intLine == null) {
 			// EOF reached
 			error(currInst, "EOF reached during integer read.");
@@ -323,8 +331,8 @@ public class PAL {
 		// Read a real from stdin
 		String realLine = "";
 		try {
-		    BufferedReader realRdr = new BufferedReader(new InputStreamReader(System.in));
-		    realLine = realRdr.readLine();
+//		    BufferedReader realRdr = new BufferedReader(new InputStreamReader(System.in));
+		    realLine = inputReader.readLine();
 		    if (realLine == null) {
 			// EOF reached
 			error(currInst, "EOF reached during real read.");
