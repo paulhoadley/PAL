@@ -73,6 +73,13 @@ public class PAL {
 	    
 	    while (line != null) {
 		st = new StringTokenizer(line);
+		
+		// It seems reasonable to allow blank lines in the
+		// source.
+		if (!(st.hasMoreTokens())) {
+		    line = br.readLine();
+		    continue;
+		}
 
 		// May not come in groups of three, in which case,
 		// catch the error.
@@ -469,8 +476,14 @@ public class PAL {
 	    break;
 	case 20:
 	    // Pop value on TOS and print it.
-	    Data tos = dataStack.pop();
-	    System.out.print(tos.getValue());
+	    if (dataStack.peek().getType() == Data.BOOL ||
+		dataStack.peek().getType() == Data.UNDEF) {
+		error(currInst, "OPR 20 can only print values of type integer, real or string.");
+		die(1);
+	    } else {
+		Data tos = dataStack.pop();
+		System.out.print(tos);
+	    }
 	    break;
 	case 21:
 	    // Print a newline.
