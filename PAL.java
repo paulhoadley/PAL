@@ -247,6 +247,22 @@ public class PAL {
 		}
 	    }
 	    break;
+	case 9:
+	    // Test if TOS is an odd integer.
+	    if (dataStack.peek().getType() != Data.INT) {
+		error(nextInst, "Argument to OPR 9 must be of type integer.");
+		die(1);
+	    } else {
+		Data e = dataStack.pop();
+		// NB the % operator will give a negative for a
+		// negative number.
+		if (Math.abs(((Integer)e.getValue()).intValue() % 2) == 1) {
+		    dataStack.push(new Data(Data.BOOL, new Boolean(true)));
+		} else {
+		    dataStack.push(new Data(Data.BOOL, new Boolean(false)));
+		}
+	    }
+	    break;
 	case 17:
 	    // Push boolean true on TOS.
 	    dataStack.push(new Data(Data.BOOL, new Boolean(true)));
@@ -303,6 +319,7 @@ public class PAL {
 	System.err.println("Error:");
 	System.err.println(nextInst);
 	System.err.println(s);
+	System.err.println(dataStack);
 	return;
     }
 
