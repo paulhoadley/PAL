@@ -123,15 +123,22 @@ public class PAL {
 		    String s = st.nextToken();
 		    if (s.startsWith("'")) {
 			int start = line.indexOf('\'');
-			int end = line.substring(start+1).indexOf('\'');
-			second = line.substring(start - 1, start + end + 2).trim();
+			int end = line.indexOf('\'', start + 1);
+			second = line.substring(start, end + 1);
 		    } else {
 			second = makeObject(s);
+                        if(second instanceof String) {
+                            System.err.println("Unrecognised second operand on line " + lineno);
+                            die(1);
+                        }
 		    }
 		} catch (NoSuchElementException e) {
 		    System.err.println("Not enough tokens on line " + lineno);
 		    die(1);
-		}
+		} catch (NumberFormatException e) {
+                    System.err.println("First operand non-integer on line " + lineno);
+                    die(1);
+                }
 		codeMem.add(new Code(mnemonic, first, second, lineno));
 		line = br.readLine();
 		lineno++;
@@ -496,7 +503,8 @@ public class PAL {
 	    }
 	}
 
-	return;
+	System.err.println("Program failed to execute a termination instruction (JMP 0 0).");
+        die(1);
     }
 
     /**
