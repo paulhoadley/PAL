@@ -35,7 +35,7 @@ public class Code {
      * argument to the instruction.  This argument is represented as
      * an <code>Object</code> because the actual type can be integer,
      * real or string.  These types are represented by Java
-     * <code>Integer</code>s, <codeFloat</code>s and
+     * <code>Integer</code>s, <code>Float</code>s and
      * <code>String</code>s respectively.
      * @param lineno the line number in the source file where this
      * instruction originated.
