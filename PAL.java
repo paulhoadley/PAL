@@ -320,9 +320,49 @@ public class PAL {
 	case 22:
 	    // Swap the top two elements on the stack.
 	    Data tmp1 = dataStack.pop();
-	    Data tmp2 = dataSTack.pop();
+	    Data tmp2 = dataStack.pop();
 	    dataStack.push(tmp1);
 	    dataStack.push(tmp2);
+	    break;
+	case 23:
+	    // Duplicate the element at the top of the stack.
+	    dataStack.push(dataStack.peek());
+	    break;
+	case 24:
+	    // Discard the element at the top of the stack.
+	    dataStack.pop();
+	    break;
+	case 25:
+	    // Convert the integer at TOS to a real.
+	    if (dataStack.peek().getType() != Data.INT) {
+		error(nextInst, "Integer to real conversion can only be performed on value of type integer.");
+		die(1);
+	    }
+	    dataStack.push(new Data(Data.REAL, new Float((float)(((Integer)(dataStack.pop().getValue())).intValue()))));
+	    break;
+	case 26:
+	    // Convert the real at TOS to an integer.
+	    if (dataStack.peek().getType() != Data.REAL) {
+		error(nextInst, "Real to integer conversion can only be performed on value of type real.");
+		die(1);
+	    }
+	    dataStack.push(new Data(Data.INT, new Integer((int)(((Float)(dataStack.pop().getValue())).floatValue()))));
+	    break;
+	case 27:
+	    // Convert the integer at TOS to a string.
+	    if (dataStack.peek().getType() != Data.INT) {
+		error(nextInst, "Integer to string conversion can only be performed on value of type integer.");
+		die(1);
+	    }
+	    dataStack.push(new Data(Data.STRING, ((Integer)(dataStack.pop().getValue())).toString()));
+	    break;
+	case 28:
+	    // Convert the real at TOS to a string.
+	    if (dataStack.peek().getType() != Data.REAL) {
+		error(nextInst, "Real to string conversion can only be performed on value of type real.");
+		die(1);
+	    }
+	    dataStack.push(new Data(Data.STRING, ((Float)(dataStack.pop().getValue())).toString()));
 	    break;
 	default:
 	    System.out.println("OPR " + opr + ": not implemented.");
