@@ -55,7 +55,7 @@ SIMPLETESTS=	$(filter-out %.out %.ref test/CVS test/interactive, $(wildcard test
 INPUTTESTS=	$(filter-out %.in %.out %.ref test/interactive/CVS, $(wildcard test/interactive/*))
 
 TARBALL=	PAL.tar
-TARBALLFILES=	${SRC} ${SIMPLETESTS} ${INPUTTESTS} Makefile
+TARBALLFILES=	${SRC} ${SIMPLETESTS} ${INPUTTESTS} Makefile COPYRIGHT
 
 %.class:	%.java
 	$(JAVAC) $<
