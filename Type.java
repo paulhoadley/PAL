@@ -6,7 +6,9 @@
  * Common constants for representing types.
  */
 public class Type {
-    private static final int INT = 0;
-    private static final int REA = 1;
-    private static final int STR = 2;
+    public static final int INT = 0;
+    public static final int REAL = 1;
+    public static final int STRING = 2;
+    public static final int BOOL = 3;
+    public static final int UNDEF = 4;
 }
