@@ -55,7 +55,7 @@ SIMPLETESTS=	$(filter-out %.out %.ref test/CVS test/interactive, $(wildcard test
 INPUTTESTS=	$(filter-out %.in %.out %.ref test/interactive/CVS, $(wildcard test/interactive/*))
 
 TARBALL=	PAL.tar
-TARBALLFILES=	${SRC} ${SIMPLETESTS} ${INPUTTESTS} Makefile COPYRIGHT
+TARBALLFILES=	${SRC} ${SIMPLETESTS} ${INPUTTESTS} Makefile COPYRIGHT PAL.pdf
 
 %.class:	%.java
 	$(JAVAC) $<
@@ -69,6 +69,24 @@ all:		${CLASSFILES}
 PAL.class:DataStack.class Data.class Code.class Mnemonic.class
 
 DataStack.class:Data.class
+
+
+
+
+###  This won't work yet.  Need to find another way to get the pic in.
+
+stackframe.tex:	stackframe.pic
+	gpic -t stackframe.pic > stackframe.tex
+
+PAL.pdf:	PAL.tex stackframe.tex
+	latex PAL.tex
+	latex PAL.tex
+	latex PAL.tex
+	dvips PAL.dvi -o PAL.ps
+	ps2pdf PAL.ps
+
+
+
 
 .PHONY: clean
 clean:
@@ -93,7 +111,7 @@ jar:	${CLASSFILES}
 	rm jar-manifest
 
 .PHONY: tarball
-tarball:
+tarball:	PAL.pdf
 	tar -cvf ${TARBALL} ${TARBALLFILES}
 
 .PHONY: test
