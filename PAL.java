@@ -158,8 +158,6 @@ public class PAL {
      * specification found here: <a
      * href="http://www.cs.adelaide.edu.au/users/third/cc/handouts/pal.pdf">The
      * PAL Machine</a>.
-     *
-     * At least, to the extent that it was possible.
      */
     private void execute() {
         //Initialise program counter.
