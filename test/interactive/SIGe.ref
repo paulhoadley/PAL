@@ -1,0 +1,16 @@
+Enter the exception type.
+pOne exh: exception 0.
+pTwo exh: exception 0.
+Main exh: exception 0.
+
+Runtime Error:
+test/interactive/SIGe:146:Exception #0 never handled!
+SIG 0 0
+
+Stack dump:
+----------
+UNDEF
+0
+0
+0
+0

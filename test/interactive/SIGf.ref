@@ -1,0 +1,33 @@
+Enter the exception type.
+
+Runtime Error:
+test/interactive/SIGf:18:A Program Abort signal was raised.
+SIG 0 1
+
+Stack dump:
+----------
+1
+46
+29
+19
+19
+UNDEF
+77
+34
+14
+4
+UNDEF
+0
+39
+9
+9
+UNDEF
+108
+44
+4
+4
+UNDEF
+139
+0
+0
+0
