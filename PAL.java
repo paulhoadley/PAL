@@ -295,6 +295,27 @@ public class PAL {
 		    die(1);
 		}
 		break;
+	    case Mnemonic.RDR:
+		// Read a real from stdin
+		String realLine = "";
+		try {
+		    BufferedReader realRdr = new BufferedReader(new InputStreamReader(System.in));
+		    realLine = realRdr.readLine();
+		    if (realLine == null) {
+			// EOF reached
+			error(currInst, "EOF reached during real read.");
+			die(1);
+		    }
+		    float realVal = Float.parseFloat(realLine);
+		    // Put the val in the stack
+		    dataStack.add(new Data(Data.REAL, new Float(realVal)), currInst.getFirst(), ((Integer)currInst.getSecond()).intValue());
+		} catch (IOException e1) {
+		    System.err.println(e1);
+		} catch (NumberFormatException e2) {
+		    error(currInst, "RDR: expecting real, got " + realLine);
+		    die(1);
+		}
+		break;
             case Mnemonic.STI:
                 tos = dataStack.pop();
 
