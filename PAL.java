@@ -98,9 +98,27 @@ public class PAL {
 	    nextInst = (Code)codeMem.get(pc);
 	    System.out.println("Current instruction: " + nextInst);
 
+	    // Objcet to pull out of nextInst.second.
+	    Object o = nextInst.getSecond();
+
 	    switch (Mnemonic.mnemonicToInt(nextInst.getMnemonic())) {
+	    case Mnemonic.LCI:
+		if (!(o instanceof Integer)) {
+		    error(nextInst, "Argument to LCI must be an integer.");
+                    die(1);
+                } else {
+                    dataStack.push(o);
+                }
+                break;
+	    case Mnemonic.LCR:
+		if (!(o instanceof Float)) {
+		    error(nextInst, "Argument to LCR must be a real.");
+                    die(1);
+                } else {
+                    dataStack.push(o);
+                }
+                break;
 	    case Mnemonic.LCS:
-		Object o = nextInst.getSecond();
 		if (!(o instanceof String)) {
 		    error(nextInst, "Argument to LCS must be a string.");
 		    die(1);
