@@ -72,6 +72,10 @@ public class PAL {
 	    StringTokenizer st;
 	    
 	    while (line != null) {
+		if (lineno > CODESIZE) {
+		    System.err.println("Exceeded code storage limit at line " + lineno);
+		    die(1);
+		}
 		st = new StringTokenizer(line);
 		
 		// It seems reasonable to allow blank lines in the
@@ -96,6 +100,7 @@ public class PAL {
 		    }
 		} catch (NoSuchElementException e) {
 		    System.err.println("Not enough tokens on line " + lineno);
+		    die(1);
 		}
 		codeMem.add(new Code(mnemonic, first, second, lineno));
 		line = br.readLine();
