@@ -274,6 +274,27 @@ public class PAL {
 	    case Mnemonic.OPR:
 		doOperation(currInst);
 		break;
+	    case Mnemonic.RDI:
+		// Read an integer from stdin
+		String intLine = "";
+		try {
+		    BufferedReader intRdr = new BufferedReader(new InputStreamReader(System.in));
+		    intLine = intRdr.readLine();
+		    if (intLine == null) {
+			// EOF reached
+			error(currInst, "EOF reached during integer read.");
+			die(1);
+		    }
+		    int intVal = Integer.parseInt(intLine);
+		    // Put the val in the stack
+		    dataStack.add(new Data(Data.INT, new Integer(intVal)), currInst.getFirst(), ((Integer)currInst.getSecond()).intValue());
+		} catch (IOException e1) {
+		    System.err.println(e1);
+		} catch (NumberFormatException e2) {
+		    error(currInst, "RDI: expecting integer, got " + intLine);
+		    die(1);
+		}
+		break;
             case Mnemonic.STI:
                 tos = dataStack.pop();
 
