@@ -139,8 +139,33 @@ public class PAL {
                         die(1);
                     }
 
+                    //Our code store uses zero-based indexing.
+                    //For compatibility reasons, addresses start at 1.
                     pc = destination - 1;
                 }
+
+                break;
+            case Mnemonic.JMP:
+                if (!(o instanceof Integer)) {
+                    error(nextInst, "Argument to JMP must be an integer.");
+                    die(1);
+                }
+
+                int destination = ((Integer)o).intValue();
+
+                if(destination == 0) {
+                    System.out.println("\n### Execution of PAL-machine simulator complete\n");
+                    die(0);
+                }
+
+                if(destination < 1 || destination > codeMem.size()) {
+                    error(nextInst, "JMP - attempt to jump outside code.");
+                    die(1);
+                }
+
+                //Our code store uses zero-based indexing.
+                //For compatibility reasons, addresses start at 1.
+                pc = destination - 1;
 
                 break;
 	    case Mnemonic.LCI:
