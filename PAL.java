@@ -7,13 +7,17 @@ import java.util.*;
 
 /**
  * The PAL abstract machine simulator.
+ *
+ * @version $Revision$
  */
 public class PAL {
     /** The filename containing the program. */
     private static String filename = "CODE";
 
-    /** A constant for code and data memory limits. */
+    /** A constant for code memory limit. */
     private final int CODESIZE = 1000;
+
+    /** A constant for data stack size limit. */
     private final int DATASIZE = 500;
 
     /** Memory for the instructions. */
@@ -24,6 +28,9 @@ public class PAL {
 
     /**
      * Main method for command line operation.
+     *
+     * @param args Command line options are limited to a single
+     * filename.
      */
     public static void main(String[] args) {
 	if (args.length > 1) {
@@ -43,7 +50,12 @@ public class PAL {
     }
     
     /**
-     * Constructor.
+     * Constructor.  Reads all of the statements in {@link
+     * PAL#filename <code>filename</code>} into {@link Code
+     * <code>Code</code>} objects, and stores these objects in {@link
+     * PAL#codeMem <code>codeMem</code>}.  The lexical analysis of the
+     * source file is quite rigid.  Any deviation from the prescribed
+     * format for source files causes the machine to stop.
      */
     public PAL() {
 	// Create the code memory.
@@ -89,28 +101,32 @@ public class PAL {
     }
 
     /**
-     * Execute the instructions in the machine's code memory.
+     * Execute the instructions in the machine's code memory.  The
+     * instructions are implemented in accordance with the
+     * specification found here: <a
+     * href="http://www.adelaide.edu.au/users/third/cc/handouts/pal.pdf">The
+     * PAL Machine</a>.
      */
     private void execute() {
 	// The program counter.
 	int pc = 0;
 
-	Code nextInst;
+	Code currInst;
 
 	while (pc < codeMem.size()) {
-	    nextInst = (Code)codeMem.get(pc);
-	    //System.out.println("Current instruction: " + nextInst);
+	    currInst = (Code)codeMem.get(pc);
+	    //System.out.println("Current instruction: " + currInst);
 
 	    // Bump the program counter.
 	    pc++;
 
-	    // Object to pull out of nextInst.second.
-	    Object o = nextInst.getSecond();
+	    // Object to pull out of currInst.second.
+	    Object o = currInst.getSecond();
 
-	    switch (Mnemonic.mnemonicToInt(nextInst.getMnemonic())) {
+	    switch (Mnemonic.mnemonicToInt(currInst.getMnemonic())) {
 	    case Mnemonic.INC:
 		if (!(o instanceof Integer)) {
-		    error(nextInst, "Argument to INC must be an integer.");
+		    error(currInst, "Argument to INC must be an integer.");
                     die(1);
                 } else {
                     dataStack.incTop(((Integer)o).intValue());
@@ -118,7 +134,7 @@ public class PAL {
                 break;
             case Mnemonic.JIF:
                 if (!(o instanceof Integer)) {
-                    error(nextInst, "Argument to JIF must be an integer.");
+                    error(currInst, "Argument to JIF must be an integer.");
                     die(1);
                 }
 
@@ -126,7 +142,7 @@ public class PAL {
 
                 if(condition.getType() != Data.BOOL) {
                     dataStack.push(condition);
-                    error(nextInst, "JIF - top of stack not a boolean.");
+                    error(currInst, "JIF - top of stack not a boolean.");
                     die(1);
                 }
 
@@ -135,7 +151,7 @@ public class PAL {
 
                     if(destination < 1 || destination > codeMem.size()) {
                         dataStack.push(condition);
-                        error(nextInst, "JIF - attempt to jump outside code.");
+                        error(currInst, "JIF - attempt to jump outside code.");
                         die(1);
                     }
 
@@ -147,7 +163,7 @@ public class PAL {
                 break;
             case Mnemonic.JMP:
                 if (!(o instanceof Integer)) {
-                    error(nextInst, "Argument to JMP must be an integer.");
+                    error(currInst, "Argument to JMP must be an integer.");
                     die(1);
                 }
 
@@ -159,7 +175,7 @@ public class PAL {
                 }
 
                 if(destination < 1 || destination > codeMem.size()) {
-                    error(nextInst, "JMP - attempt to jump outside code.");
+                    error(currInst, "JMP - attempt to jump outside code.");
                     die(1);
                 }
 
@@ -170,7 +186,7 @@ public class PAL {
                 break;
 	    case Mnemonic.LCI:
 		if (!(o instanceof Integer)) {
-		    error(nextInst, "Argument to LCI must be an integer.");
+		    error(currInst, "Argument to LCI must be an integer.");
                     die(1);
                 } else {
                     dataStack.push(new Data(Data.INT, o));
@@ -182,7 +198,7 @@ public class PAL {
                 }
 
 		if (!(o instanceof Float)) {
-		    error(nextInst, "Argument to LCR must be a real.");
+		    error(currInst, "Argument to LCR must be a real.");
                     die(1);
                 } else {
                     dataStack.push(new Data(Data.REAL, o));
@@ -190,11 +206,11 @@ public class PAL {
                 break;
 	    case Mnemonic.LCS:
 		if (!(o instanceof String)) {
-		    error(nextInst, "Argument to LCS must be a string.");
+		    error(currInst, "Argument to LCS must be a string.");
 		    die(1);
 		} else {
 		    if (!(((String)o).startsWith("'") && (((String)o).endsWith("'")))) {
-			error(nextInst, "String must be delimited by single-quotes.");
+			error(currInst, "String must be delimited by single-quotes.");
 			die(1);
 		    } else {
 			dataStack.push(new Data(Data.STRING, ((String)o).substring(1, ((String)o).length() - 1)));
@@ -203,11 +219,11 @@ public class PAL {
 		break;
             case Mnemonic.LDA:
                 if(!(o instanceof Integer)) {
-                    error(nextInst, "Argument to LDA must be an integer.");
+                    error(currInst, "Argument to LDA must be an integer.");
                     die(1);
                 }
 
-                int address = dataStack.getAddress(nextInst.getFirst(), ((Integer)o).intValue());
+                int address = dataStack.getAddress(currInst.getFirst(), ((Integer)o).intValue());
 
                 dataStack.push(new Data(Data.INT, new Integer(address)));
 
@@ -217,7 +233,7 @@ public class PAL {
 
                 if(tos.getType() != Data.INT) {
                     dataStack.push(tos);
-                    error(nextInst, "LDI - top of stack must be an integer.");
+                    error(currInst, "LDI - top of stack must be an integer.");
                     die(1);
                 }
 
@@ -230,11 +246,11 @@ public class PAL {
                 break;
             case Mnemonic.LDV:
                 if(!(o instanceof Integer)) {
-                    error(nextInst, "Argument to LDV must be an integer");
+                    error(currInst, "Argument to LDV must be an integer");
                     die(1);
                 }
 
-                loadedVal = dataStack.get(nextInst.getFirst(), ((Integer)o).intValue());
+                loadedVal = dataStack.get(currInst.getFirst(), ((Integer)o).intValue());
 
                 dataStack.push((Data)loadedVal.clone());
 
@@ -244,14 +260,14 @@ public class PAL {
 
                 break;
 	    case Mnemonic.OPR:
-		doOperation(nextInst);
+		doOperation(currInst);
 		break;
             case Mnemonic.STI:
                 tos = dataStack.pop();
 
                 if(tos.getType() != Data.INT) {
                     dataStack.push(tos);
-                    error(nextInst, "STI - top of stack must be an integer.");
+                    error(currInst, "STI - top of stack must be an integer.");
                     die(1);
                 }
 
@@ -264,12 +280,12 @@ public class PAL {
                 break;
             case Mnemonic.STO:
                 if(!(o instanceof Integer)) {
-                    error(nextInst, "Argument to STO must be an integer.");
+                    error(currInst, "Argument to STO must be an integer.");
                     die(1);
                 }
 
                 storeVal = dataStack.pop();
-                storeLocation = dataStack.get(nextInst.getFirst(), ((Integer)o).intValue());
+                storeLocation = dataStack.get(currInst.getFirst(), ((Integer)o).intValue());
 
                 storeLocation.setType(storeVal.getType());
                 storeLocation.setValue(storeVal.getValue());
@@ -277,7 +293,7 @@ public class PAL {
                 break;
             case Mnemonic.REH:
                 if(!(o instanceof Integer)) {
-                    error(nextInst, "Argument to REH must be an integer.");
+                    error(currInst, "Argument to REH must be an integer.");
                     die(1);
                 }
 
@@ -290,23 +306,33 @@ public class PAL {
 
                 break;
 	    default:
-		System.out.println(nextInst.getMnemonic() + ": not implemented.");
+		System.out.println(currInst.getMnemonic() + ": not implemented.");
 	    }
 	}
 
 	return;
     }
 
-    public void doOperation(Code nextInst) {
-	Object o = nextInst.getSecond();
+    /**
+     * Perform the operation referenced by an <code>OPR</code>
+     * instruction.  This method is provided separately to {@link
+     * PAL#execute <code>execute</code>} to avoid placing the rather
+     * lengthy <code>switch</code> statement in that method.
+     *
+     * @param currInst The current <code>Code</code> object to be
+     * executed.  If it reaches here, that object contains an
+     * <code>OPR</code> mnemonic.
+     */
+    public void doOperation(Code currInst) {
+	Object o = currInst.getSecond();
 	int opr;
 	if (!(o instanceof Integer)) {
-	    error(nextInst, "Argument to OPR must be an integer.");
+	    error(currInst, "Argument to OPR must be an integer.");
 	    die(1);
 	}
 	opr = ((Integer)o).intValue();
 	if (opr < 0 || opr > 31) {
-	    error(nextInst, "Argument to OPR must be in range 0-31.");
+	    error(currInst, "Argument to OPR must be in range 0-31.");
 	    die(1);
 	}
 	switch (opr) {
@@ -335,14 +361,14 @@ public class PAL {
 	    if (val1.getType() != val2.getType()) {
 		dataStack.push(val2);
 		dataStack.push(val1);
-		error(nextInst, "Values for arithmetic operations must be of same type.");
+		error(currInst, "Values for arithmetic operations must be of same type.");
 		die(1);
 	    } else {
 		int type = val1.getType();
 		if (type != Data.INT && type != Data.REAL) {
 		    dataStack.push(val2);
 		    dataStack.push(val1);
-		    error(nextInst, "Values for arithmetic operations must be of type integer or real.");
+		    error(currInst, "Values for arithmetic operations must be of type integer or real.");
 		    die(1);
 		}
 		if (type == Data.INT) {
@@ -388,13 +414,13 @@ public class PAL {
 	    // Raise the value at TOS-1 to the power of the value at
 	    // TOS, pop both and push the result.
 	    if (dataStack.peek().getType() != Data.INT) {
-		error(nextInst, "Exponent must be of type integer.");
+		error(currInst, "Exponent must be of type integer.");
 		die(1);
 	    }
 	    Data exp = dataStack.pop();
 	    int baseType = dataStack.peek().getType();
 	    if (baseType != Data.INT && baseType != Data.REAL) {
-		error(nextInst, "Base must be of type integer or real.");
+		error(currInst, "Base must be of type integer or real.");
 		die(1);
 	    }
 	    Data base = dataStack.pop();
@@ -412,7 +438,7 @@ public class PAL {
 	    if (str1.getType() != Data.STRING || str2.getType() != Data.STRING) {
 		dataStack.push(str1);
 		dataStack.push(str2);
-		error(nextInst, "Both arguments to OPR 8 must be of type string.");
+		error(currInst, "Both arguments to OPR 8 must be of type string.");
 		die(1);
 	    }
 	    dataStack.push(new Data(Data.STRING, (String)(str2.getValue()) + (String)(str1.getValue())));
@@ -420,7 +446,7 @@ public class PAL {
 	case 9:
 	    // Test if TOS is an odd integer.
 	    if (dataStack.peek().getType() != Data.INT) {
-		error(nextInst, "Argument to OPR 9 must be of type integer.");
+		error(currInst, "Argument to OPR 9 must be of type integer.");
 		die(1);
 	    } else {
 		Data e = dataStack.pop();
@@ -469,7 +495,7 @@ public class PAL {
 	case 25:
 	    // Convert the integer at TOS to a real.
 	    if (dataStack.peek().getType() != Data.INT) {
-		error(nextInst, "Integer to real conversion can only be performed on value of type integer.");
+		error(currInst, "Integer to real conversion can only be performed on value of type integer.");
 		die(1);
 	    }
 	    dataStack.push(new Data(Data.REAL, new Float((float)(((Integer)(dataStack.pop().getValue())).intValue()))));
@@ -477,7 +503,7 @@ public class PAL {
 	case 26:
 	    // Convert the real at TOS to an integer.
 	    if (dataStack.peek().getType() != Data.REAL) {
-		error(nextInst, "Real to integer conversion can only be performed on value of type real.");
+		error(currInst, "Real to integer conversion can only be performed on value of type real.");
 		die(1);
 	    }
 	    dataStack.push(new Data(Data.INT, new Integer((int)(((Float)(dataStack.pop().getValue())).floatValue()))));
@@ -485,7 +511,7 @@ public class PAL {
 	case 27:
 	    // Convert the integer at TOS to a string.
 	    if (dataStack.peek().getType() != Data.INT) {
-		error(nextInst, "Integer to string conversion can only be performed on value of type integer.");
+		error(currInst, "Integer to string conversion can only be performed on value of type integer.");
 		die(1);
 	    }
 	    dataStack.push(new Data(Data.STRING, ((Integer)(dataStack.pop().getValue())).toString()));
@@ -493,7 +519,7 @@ public class PAL {
 	case 28:
 	    // Convert the real at TOS to a string.
 	    if (dataStack.peek().getType() != Data.REAL) {
-		error(nextInst, "Real to string conversion can only be performed on value of type real.");
+		error(currInst, "Real to string conversion can only be performed on value of type real.");
 		die(1);
 	    }
 	    dataStack.push(new Data(Data.STRING, ((Float)(dataStack.pop().getValue())).toString()));
@@ -503,7 +529,7 @@ public class PAL {
 	    Data bool1 = dataStack.pop();
 	    Data bool2 = dataStack.pop();
 	    if (bool1.getType() != Data.BOOL || bool2.getType() != Data.BOOL) {
-		error(nextInst, "Logical and can only be performed on values of type boolean.");
+		error(currInst, "Logical and can only be performed on values of type boolean.");
 		die(1);
 	    }
 	    dataStack.push(new Data(Data.BOOL, new Boolean(((Boolean)(bool1.getValue())).booleanValue() && ((Boolean)(bool2.getValue())).booleanValue())));
@@ -513,7 +539,7 @@ public class PAL {
 	    bool1 = dataStack.pop();
 	    bool2 = dataStack.pop();
 	    if (bool1.getType() != Data.BOOL || bool2.getType() != Data.BOOL) {
-		error(nextInst, "Logical or can only be performed on values of type boolean.");
+		error(currInst, "Logical or can only be performed on values of type boolean.");
 		die(1);
 	    }
 	    dataStack.push(new Data(Data.BOOL, new Boolean(((Boolean)(bool1.getValue())).booleanValue() || ((Boolean)(bool2.getValue())).booleanValue())));
@@ -551,14 +577,19 @@ public class PAL {
     }
 
     /**
-     * Print an error.
+     * Print an error.  Errors are almost invariably unrecoverable, so
+     * this method announces the error, prints the offending
+     * instruction and dumps the stack.
+     *
+     * @param currInst The offending <code>Code</code> object.
+     * @param s A context-dependent error message to be printed.
      */
-    private void error(Code nextInst, String s) {
+    private void error(Code currInst, String s) {
 	// Ensure the error is always started on a new line.
 	System.err.println();
 	System.err.println("Runtime Error:");
-	System.err.println(filename + ":" + nextInst.getLineNo() + ":" + s);
-	System.err.println(nextInst);
+	System.err.println(filename + ":" + currInst.getLineNo() + ":" + s);
+	System.err.println(currInst);
 	System.err.println("\nStack dump:");
 	System.err.println("----------");
 	System.err.print(dataStack);
@@ -567,6 +598,10 @@ public class PAL {
 
     /**
      * Die due to an error.
+     *
+     * @param err An arbitrary error code.  This integer is returned
+     * to the operating system via the <code>System.exit</code>
+     * method.
      */
     private void die(int err) {
 	System.exit(err);
