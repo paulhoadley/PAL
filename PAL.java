@@ -22,26 +22,15 @@ public class PAL {
     /** Stack for data. */
     private DataStack dataStack;
 
-    // Booleans for command line options.
-    private static boolean sOpt = false;
-
     /**
      * Main method for command line operation.
      */
     public static void main(String[] args) {
-	// Accepts -s for more flexible string processing and a
-	// filename.
-	if (args.length > 2) {
+	if (args.length > 1) {
 	    usage();
 	    System.exit(1);
-	} else {
-	    for (int i = 0; i < args.length; i++) {
-		if (args[i].equals("-s")) {
-		    sOpt = true;
-		} else {
-		    filename = args[i];
-		}
-	    }
+	} else if (args.length == 1) {
+	    filename = args[0];
 	}
 
 	// Make a machine and load the code.
@@ -78,16 +67,13 @@ public class PAL {
 		try {
 		    mnemonic = st.nextToken();
 		    first = Integer.parseInt(st.nextToken());
-		    // The second argument may be a string, in which
-		    // case we need to get the substring surrounded by
-		    // single quotes.
 		    String s = st.nextToken();
 		    if (s.startsWith("'")) {
 			int start = line.indexOf('\'');
 			System.err.println(start);
 			int end = line.substring(start+1).indexOf('\'');
 			System.err.println(end);
-			second = line.substring(start, start + end + 2);
+			second = line.substring(start - 1, start + end + 2).trim();
 		    } else {
 			second = makeObject(s);
 		    }
@@ -157,15 +143,11 @@ public class PAL {
 		    error(nextInst, "Argument to LCS must be a string.");
 		    die(1);
 		} else {
-		    if (sOpt) {
-			dataStack.push(new Data(Data.STRING, o));
+		    if (!(((String)o).startsWith("'") && (((String)o).endsWith("'")))) {
+			error(nextInst, "String must be delimited by single-quotes.");
+			die(1);
 		    } else {
-			if (!(((String)o).startsWith("'") && (((String)o).endsWith("'")))) {
-			    error(nextInst, "String must be delimited by single-quotes.");
-			    die(1);
-			} else {
-			    dataStack.push(new Data(Data.STRING, ((String)o).substring(1, ((String)o).length() - 1)));
-			}
+			dataStack.push(new Data(Data.STRING, ((String)o).substring(1, ((String)o).length() - 1)));
 		    }
 		}
 		break;
