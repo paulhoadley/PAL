@@ -110,6 +110,9 @@ public class PAL {
 	    nextInst = (Code)codeMem.get(pc);
 	    System.out.println("Current instruction: " + nextInst);
 
+	    // Bump the program counter.
+	    pc++;
+
 	    // Object to pull out of nextInst.second.
 	    Object o = nextInst.getSecond();
 
@@ -122,6 +125,33 @@ public class PAL {
                     dataStack.incTop(((Integer)o).intValue());
                 }
                 break;
+            case Mnemonic.JIF:
+                if (!(o instanceof Integer)) {
+                    error(nextInst, "Argument to JIF must be an integer.");
+                    die(1);
+                }
+
+                Data condition = dataStack.pop();
+
+                if(condition.getType() != Data.BOOL) {
+                    dataStack.push(condition);
+                    error(nextInst, "JIF - top of stack not a boolean.");
+                    die(1);
+                }
+
+                if(((Boolean)condition.getValue()).booleanValue()) {
+                    int destination = ((Integer)o).intValue();
+
+                    if(destination < 1 || destination > codeMem.size()) {
+                        dataStack.push(condition);
+                        error(nextInst, "JIF - attempt to jump outside code.");
+                        die(1);
+                    }
+
+                    pc = destination - 1;
+                }
+
+                break;
 	    case Mnemonic.LCI:
 		if (!(o instanceof Integer)) {
 		    error(nextInst, "Argument to LCI must be an integer.");
@@ -131,6 +161,10 @@ public class PAL {
                 }
                 break;
 	    case Mnemonic.LCR:
+                if(o instanceof Integer) {
+                    o = new Float(((Integer)o).floatValue());
+                }
+
 		if (!(o instanceof Float)) {
 		    error(nextInst, "Argument to LCR must be a real.");
                     die(1);
@@ -157,9 +191,6 @@ public class PAL {
 	    default:
 		System.out.println(nextInst.getMnemonic() + ": not implemented.");
 	    }
-
-	    // Bump the program counter.
-	    pc++;
 	}
 
 	return;
