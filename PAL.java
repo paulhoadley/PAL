@@ -111,7 +111,7 @@ public class PAL {
                     die(1);
                 } else {
 		    for (int i = 0; i < ((Integer)o).intValue(); i++) {
-			dataStack.push(new Data(Type.UNDEF, null));
+			dataStack.push(new Data(Data.UNDEF, null));
 		    }
                 }
                 break;
@@ -120,7 +120,7 @@ public class PAL {
 		    error(nextInst, "Argument to LCI must be an integer.");
                     die(1);
                 } else {
-                    dataStack.push(new Data(Type.INT, o));
+                    dataStack.push(new Data(Data.INT, o));
                 }
                 break;
 	    case Mnemonic.LCR:
@@ -128,7 +128,7 @@ public class PAL {
 		    error(nextInst, "Argument to LCR must be a real.");
                     die(1);
                 } else {
-                    dataStack.push(new Data(Type.REAL, o));
+                    dataStack.push(new Data(Data.REAL, o));
                 }
                 break;
 	    case Mnemonic.LCS:
@@ -136,7 +136,7 @@ public class PAL {
 		    error(nextInst, "Argument to LCS must be a string.");
 		    die(1);
 		} else {
-		    dataStack.push(new Data(Type.STRING, o));
+		    dataStack.push(new Data(Data.STRING, o));
 		}
 		break;
 	    case Mnemonic.OPR:
