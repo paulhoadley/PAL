@@ -146,7 +146,7 @@ public class PAL {
                 returnPoint.setValue(new Integer(pc));
 
                 //Set new frame base.
-                dataStack.pushBase(dataStack.getTop() - currInst.getFirst());
+                dataStack.setBase(dataStack.getTop() - currInst.getFirst());
 
                 pc = ((Integer)currInst.getSecond()).intValue() - 1;
 
@@ -287,10 +287,10 @@ public class PAL {
 
                 break;
             case Mnemonic.MST:
-                Data staticLink = dataStack.get(currInst.getFirst(), -4);
+                int staticLink = dataStack.getAddress(currInst.getFirst(), 0);
                 int dynamicLink = dataStack.getAddress(0, 0);
 
-                dataStack.markStack(((Integer)staticLink.getValue()).intValue(), dynamicLink);
+                dataStack.markStack(staticLink, dynamicLink);
 
                 break;
 	    case Mnemonic.OPR:
@@ -423,6 +423,9 @@ public class PAL {
             Data returnPoint = dataStack.get(0, -2);
             pc = ((Integer)returnPoint.getValue()).intValue();
 
+            //Remember the dynamic link.
+            Data dynamicLink = dataStack.get(0, -3);
+
             //Pop data from the stack back down to the last frame.
             int popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
 
@@ -430,8 +433,8 @@ public class PAL {
                 dataStack.pop();
             }
 
-            //Pop last stack frame base pointer.
-            dataStack.popBase();
+            //Set the new frame base using the remembered dynamic link.
+            dataStack.setBase(((Integer)dynamicLink.getValue()).intValue());
 
             break;
         case 1:
@@ -442,6 +445,9 @@ public class PAL {
             returnPoint = dataStack.get(0, -2);
             pc = ((Integer)returnPoint.getValue()).intValue();
 
+            //Remember the dynamic link.
+            dynamicLink = dataStack.get(0, -3);
+
             //Pop data from the stack back down to the last frame.
             popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
 
@@ -449,8 +455,8 @@ public class PAL {
                 dataStack.pop();
             }
 
-            //Pop last stack frame base pointer.
-            dataStack.popBase();
+            //Set the new frame base using the remebered dynamic link.
+            dataStack.setBase(((Integer)dynamicLink.getValue()).intValue());
 
             //Leave the return value on top of the stack.
             dataStack.push(returnValue);

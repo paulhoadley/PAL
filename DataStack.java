@@ -15,14 +15,14 @@ public class DataStack {
     /** A container for the <code>Data</code> objects. */
     private List data;
 
-    /** A container for easy access to the stack frames. */
-    private Stack stackFrames;
+    /** The address of the current frame's base. */
+    private int frameBase;
 
     /** Reference to the next free space on top of the stack (TOS). */
-    int top;
+    private int top;
 
     /** Maximum stack size. */
-    int maxSize;
+    private int maxSize;
 
     /**
      * Default constructor.  Assumes no limit on stack size.
@@ -41,12 +41,10 @@ public class DataStack {
 
         data = new ArrayList();
 
-        stackFrames = new Stack();
-
         //Set up mark stack part for main program activation record.
         markStack(0, 0);
 
-        pushBase(top);
+        setBase(top);
 
         maxSize = max;
     }
@@ -119,11 +117,7 @@ public class DataStack {
      * address is out of bounds.
      */
     public Data get(int levelDiff, int offset) throws IndexOutOfBoundsException {
-        int address = offset;
-        address += ((Integer)stackFrames.get(stackFrames.size() - 1 - levelDiff)).intValue();
-
-        if(address < 0 || address >= top)
-            throw new IndexOutOfBoundsException("PAL address out of bounds.");
+        int address = getAddress(levelDiff, offset);
 
         return (Data)data.get(address);
     }
@@ -167,19 +161,12 @@ public class DataStack {
     }
 
     /**
-     * Push a frame base address onto the stack frame list.
+     * Set the current frame's base address.
      *
      * @param address The address to store as the current frame base.
      */
-    public void pushBase(int address) {
-        stackFrames.push(new Integer(address));
-    }
-
-    /**
-     * Pop a frame base address off of the stack frame list.
-     */
-    public void popBase() {
-        stackFrames.pop();
+    public void setBase(int address) {
+        frameBase = address;
     }
 
     /**
@@ -195,9 +182,13 @@ public class DataStack {
      * address is out of bounds.
      */
     public int getAddress(int levelDiff, int offset) throws IndexOutOfBoundsException {
-        int result = offset;
+        int result = frameBase;
 
-        result += ((Integer)stackFrames.get(stackFrames.size() - 1 - levelDiff)).intValue();
+        for (int i = 0;i < levelDiff;i++) {
+            result = ((Integer)get(result - 4).getValue()).intValue();
+        }
+
+        result += offset;
 
         if(result < 0 || result >= top)
             throw new IndexOutOfBoundsException("PAL address out of bounds.");
