@@ -622,6 +622,13 @@ public class PAL {
 			dataStack.push(new Data(Data.INT, new Integer(int1 * int2)));
 			break;
 		    case 6:
+                        if(int2 == 0) {
+                            dataStack.push(ntos);
+                            dataStack.push(tos);
+                            error(currInst, "Attempt to divide by zero.");
+                            die(1);
+                        }
+
 			dataStack.push(new Data(Data.INT, new Integer(int1 / int2)));
 			break;
 		    default:
@@ -640,6 +647,13 @@ public class PAL {
 			dataStack.push(new Data(Data.REAL, new Float(flt1 * flt2)));
 			break;
 		    case 6:
+                        if(flt2 == 0) {
+                            dataStack.push(ntos);
+                            dataStack.push(tos);
+                            error(currInst, "Attempt to divide by zero.");
+                            die(1);
+                        }
+
 			dataStack.push(new Data(Data.REAL, new Float(flt1 / flt2)));
 			break;
 		    default:
