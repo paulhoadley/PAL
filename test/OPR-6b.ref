@@ -1,1 +1,13 @@
-Exception in thread "main" java.lang.NoClassDefFoundError: PAL
+
+Runtime Error:
+test/OPR-6b:5:Attempt to divide by zero.
+OPR 0 6
+
+Stack dump:
+----------
+0.0
+0.0
+0
+0
+0
+0
