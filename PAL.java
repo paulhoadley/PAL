@@ -32,6 +32,9 @@ public class PAL {
     /** Input reader. */
     private BufferedReader inputReader;
 
+    /** Wrapper to enable pushback of bytes into the input stream. */
+    private PushbackReader pushBack;
+
     /**
      * Main method for command line operation.
      *
@@ -114,7 +117,8 @@ public class PAL {
 	    }
 
             //Set up the input reader.
-            inputReader = new BufferedReader(new InputStreamReader(System.in));
+	    pushBack = new PushbackReader(new InputStreamReader(System.in));
+            inputReader = new BufferedReader(pushBack);
 	} catch (IOException e) {
 	    System.err.println(e);
 	}
@@ -688,13 +692,12 @@ public class PAL {
 	case 19:
 	    // Test for EOF.
 	    try {
-		PushbackInputStream pb = new PushbackInputStream(System.in);
-		int nextByte = pb.read();
+		int nextByte = pushBack.read();
 		if (nextByte == -1) {
 		    dataStack.push(new Data(Data.BOOL, new Boolean(true)));
 		} else {
 		    dataStack.push(new Data(Data.BOOL, new Boolean(false)));
-		    pb.unread(nextByte);
+		    pushBack.unread(nextByte);
 		}
 	    } catch (IOException e) {
 		System.err.println(e);
