@@ -153,7 +153,7 @@ public class PAL {
                     die(1);
                 }
 
-                if(((Boolean)condition.getValue()).booleanValue()) {
+                if(!((Boolean)condition.getValue()).booleanValue()) {
                     int destination = ((Integer)o).intValue();
 
                     if(destination < 1 || destination > codeMem.size()) {
@@ -466,6 +466,94 @@ public class PAL {
 		}
 	    }
 	    break;
+        case 10:
+        case 11:
+        case 12:
+        case 13:
+        case 14:
+        case 15:
+            // Pop values at TOS and TOS-1, compare them (depending on
+            // the opcode) and push result onto TOS.
+            secondArg = dataStack.pop();
+            firstArg = dataStack.pop();
+
+            if (firstArg.getType() != secondArg.getType()) {
+		dataStack.push(firstArg);
+		dataStack.push(secondArg);
+		error(currInst, "Values for arithmetic operations must be of same type.");
+		die(1);
+	    } else {
+		int type = secondArg.getType();
+		if (type != Data.INT && type != Data.REAL) {
+		    dataStack.push(firstArg);
+		    dataStack.push(secondArg);
+		    error(currInst, "Values for arithmetic operations must be of type integer or real.");
+		    die(1);
+		}
+		if (type == Data.INT) {
+		    int int1 = ((Integer)firstArg.getValue()).intValue();
+		    int int2 = ((Integer)secondArg.getValue()).intValue();
+		    switch (opr) {
+		    case 10:
+			dataStack.push(new Data(Data.BOOL, new Boolean(int1 == int2)));
+			break;
+		    case 11:
+			dataStack.push(new Data(Data.BOOL, new Boolean(int1 != int2)));
+			break;
+		    case 12:
+			dataStack.push(new Data(Data.BOOL, new Boolean(int1 < int2)));
+			break;
+		    case 13:
+			dataStack.push(new Data(Data.BOOL, new Boolean(int1 >= int2)));
+			break;
+		    case 14:
+			dataStack.push(new Data(Data.BOOL, new Boolean(int1 > int2)));
+			break;
+		    case 15:
+			dataStack.push(new Data(Data.BOOL, new Boolean(int1 <= int2)));
+			break;
+		    default:
+		    }
+		} else {
+		    float flt1 = ((Float)firstArg.getValue()).floatValue();
+		    float flt2 = ((Float)secondArg.getValue()).floatValue();
+		    switch (opr) {
+		    case 10:
+			dataStack.push(new Data(Data.BOOL, new Boolean(flt1 == flt2)));
+			break;
+		    case 11:
+			dataStack.push(new Data(Data.BOOL, new Boolean(flt1 != flt2)));
+			break;
+		    case 12:
+			dataStack.push(new Data(Data.BOOL, new Boolean(flt1 < flt2)));
+			break;
+		    case 13:
+			dataStack.push(new Data(Data.BOOL, new Boolean(flt1 >= flt2)));
+			break;
+		    case 14:
+			dataStack.push(new Data(Data.BOOL, new Boolean(flt1 > flt2)));
+			break;
+		    case 15:
+			dataStack.push(new Data(Data.BOOL, new Boolean(flt1 <= flt2)));
+			break;
+		    default:
+		    }
+		}
+	    }
+	    break;
+        case 16:
+            // Logical complement the top element of the stack.
+            Data tos = dataStack.pop();
+
+            if(tos.getType() != Data.BOOL) {
+                dataStack.push(tos);
+                error(currInst, "OPR 0 16 - top of stack not a boolean.");
+                die(1);
+            }
+
+            dataStack.push(new Data(Data.BOOL, new Boolean(!((Boolean)tos.getValue()).booleanValue())));
+
+            break;
 	case 17:
 	    // Push boolean true on TOS.
 	    dataStack.push(new Data(Data.BOOL, new Boolean(true)));
@@ -481,7 +569,7 @@ public class PAL {
 		error(currInst, "OPR 20 can only print values of type integer, real or string.");
 		die(1);
 	    } else {
-		Data tos = dataStack.pop();
+		tos = dataStack.pop();
 		System.out.print(tos);
 	    }
 	    break;
