@@ -287,7 +287,9 @@ public class PAL {
 		    }
 		    int intVal = Integer.parseInt(intLine);
 		    // Put the val in the stack
-		    dataStack.add(new Data(Data.INT, new Integer(intVal)), currInst.getFirst(), ((Integer)currInst.getSecond()).intValue());
+                    Data storeLocation = dataStack.get(currInst.getFirst(),  ((Integer)currInst.getSecond()).intValue());
+		    storeLocation.setType(Data.INT);
+                    storeLocation.setValue(new Integer(intVal));
 		} catch (IOException e1) {
 		    System.err.println(e1);
 		} catch (NumberFormatException e2) {
@@ -308,7 +310,9 @@ public class PAL {
 		    }
 		    float realVal = Float.parseFloat(realLine);
 		    // Put the val in the stack
-		    dataStack.add(new Data(Data.REAL, new Float(realVal)), currInst.getFirst(), ((Integer)currInst.getSecond()).intValue());
+                    Data storeLocation = dataStack.get(currInst.getFirst(), ((Integer)currInst.getSecond()).intValue());
+                    storeLocation.setType(Data.REAL);
+                    storeLocation.setValue(new Float(realVal));
 		} catch (IOException e1) {
 		    System.err.println(e1);
 		} catch (NumberFormatException e2) {
