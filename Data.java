@@ -34,4 +34,20 @@ public class Data {
     public Object getValue() {
 	return value;
     }
+
+    /**
+     * Sets the type of this datum.
+     */
+    public void setType(int type) {
+	this.type = type;
+	return;
+    }
+
+    /**
+     * Sets the value of this datum.
+     */
+    public void setValue(Object value) {
+	this.value = value;
+	return;
+    }
 }
