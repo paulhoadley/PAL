@@ -1,0 +1,665 @@
+\documentclass[a4paper,10pt]{report}
+
+\setcounter{tocdepth}{2}
+\fboxsep=0.2in
+
+\begin{document}
+\author{Philip J. Roberts and Paul A. Hoadley}
+\title{The PAL Abstract Machine \\ An implementation in Java}
+\date{}
+\maketitle
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\chapter{Introduction}
+The PAL Abstract Machine is a virtual, stack-based, Harvard
+architecture machine.  Data in memory is tagged, so that a type system
+is supported explicitly.  The instruction set is short, though
+reasonably powerful, including an ``operation'' instruction
+(\texttt{OPR}---see Section \ref{sec:instr:OPR}) with some 32
+variants, including arithmetic and logical operations, type
+conversions and stack manipulation.
+
+This document describes the PAL Abstract Machine in general, and also
+an implementation of the machine as a simulator written in the Java
+programming language.  The Java simulator supports a human-readable
+object file format (described in Section \ref{sec:objectfile}), and
+console-based input and output.
+
+\chapter{Architecture}
+\section{Memory}
+\label{sec:arch.mem}
+Storage is divided into two regions: a linear instruction store, and a
+data stack.  The instruction store is essentially write-once (at
+object file load time) and then read-only: self-modifying code is not
+possible.  The first location in the instruction store is at address
+1.
+
+The data stack is manipulated by both the user program and the machine
+itself, as described in the various instructions listed in Section
+\ref{sec:mnemonics}.  In addition to the conventional stack
+operations, the data stack provides a degree of random access.
+Variables are implemented by referring to a stack location relative to
+the current stack frame.  The relation is described in terms of a
+\emph{level difference} and a \emph{displacement}.  The level
+difference refers to the number of stack frames the target stack frame
+lies below the current stack frame.  Clearly, this number can be zero,
+in which case the current stack frame itself is referenced.  The
+displacement is the number of stack positions that the target position
+lies above the top of its stack mark.  The first such position has a
+displacement of zero.
+
+Throughout this document, reference is made to a top-of-stack pointer
+which is maintained by the machine as a reference to the top item in
+the data stack.  This pointer is largely internal to the machine:
+although it can be manipulated directly (by the \texttt{INC}
+instruction---see Section \ref{sec:instr:INC}), and is moved about
+implicitly by other instructions, there is no straightforward way, for
+example, to obtain the absolute value of this pointer from within a
+program.
+
+Data items of all sizes occupy only one position on the data stack.
+For example, an integer and the string \texttt{'an integer'} can both
+be stored in a single memory location.  Similarly, an instruction and
+all of its operands are stored in a single location in the instruction
+store.
+
+The \emph{stack mark} is the area at the bottom of a stack frame
+containing meta-information for that stack frame.  Figure
+\ref{fig:stack} shows the format of the stack frame used by the PAL
+Abstract Machine.  The machine sets up the stack mark for the first
+stack frame automatically.
+
+\begin{figure}[htbp]
+  \centering
+  \input{stackframe.tex}
+  \centerline{\box\graph}
+  \caption[Stack frame]{Stack frame: the stack mark is shaded}
+  \label{fig:stack}
+\end{figure}
+
+\section{Type system}
+Each item in the data stack is \emph{tagged} with a type.  The type of
+a data item affects how that item can be manipulated, as described in
+the various instructions in Section \ref{sec:mnemonics}.  The types
+are:
+\begin{itemize}
+\item bool
+\item real
+\item int
+\item string
+\item undef
+\end{itemize}
+Naturally, a value of type bool can be only ``true'' or ``false''.
+The value of an item tagged with type undef is undefined.  Values
+tagged with types int, real and string are constrained by the same
+rules as Java's int, float and string literals respectively.
+
+\section{Exception system}
+\label{sec:exceptions}
+The PAL Abstract Machine supports a fairly primitive exception
+mechanism.  There are three instructions related to exception
+generation and handling: \texttt{SIG} (Section \ref{sec:instr:SIG}),
+\texttt{REH} (Section \ref{sec:instr:REH}) and \texttt{OPR 0 31}
+(Section \ref{sec:instr:OPR31}).  In addition, the two input
+instructions \texttt{RDI} (Section \ref{sec:instr:RDI}) and
+\texttt{RDR} (Section \ref{sec:instr:RDR}) may raise exceptions when
+they encounter unexpected input.
+
+The \texttt{SIG} instruction is used primarily for raising custom
+user-defined exceptions.  For example, to raise exception 5, one would
+use the command \texttt{SIG 0 5}.  \texttt{SIG} is also used in
+exception handlers as we will see later.
+
+The \texttt{REH} instruction tells the machine where to find an
+exception handler, and associates that handler with the currently
+active stack frame.
+
+\texttt{OPR 0 31} compares the presently active exception to the
+integer value on top of the stack.  It pushes a boolean which
+indicates whether they match or not.
+
+The following exceptions are defined:
+\begin{description}
+\item[0 Re-raise the present active signal] This will cause the
+  current signal to be re-raised.  Typically used by an exception
+  handler as a last resort to deal with an unrecognised exception.
+  Hence, the current frame is ignored in the search for a handler when
+  \texttt{SIG 0 0} has been used.
+\item[1 Program abort] This signal causes instant termination of the
+  program.  No exception handler will be called.  (Raising this
+  exception differs from terminating a program with \texttt{JMP 0 0}
+  in that a non-zero exit status will be returned to the operating
+  system, signaling abnormal termination of the simulator.)
+\item[2 No return in function] Indicates that no return statement was
+  executed by a function.
+\item[3 Type mis-match in input] \texttt{RDI} found a non-integer
+  value, or \texttt{RDR} found a non-real value.
+\item[4 Attempt to read past end of file] The input file was at
+  end-of-file before an \texttt{RDI} or \texttt{RDR} instruction.
+\end{description}
+
+An exception handler is typically written as follows:
+\begin{enumerate}
+\item Use \texttt{OPR 0 31} to test whether the exception is one of a
+  number of known exceptions.
+\item If it is, execute the appropriate handler code.
+\item If the exception is unknown, use \texttt{SIG 0 0} to re-raise
+  the exception in case there is a handler in a lower stack frame
+  which can deal with it.
+\end{enumerate}
+For example:
+\begin{verbatim}
+1:    LCI 0 3        handler code begins here
+      OPR 0 31
+      JIF 0 10  
+      .
+      .              code to handle input type mismatch
+      .
+10:   LCI 0 4
+      OPR 0 31
+      JIF 0 20
+      .
+      .              code to handle eof
+      .
+20:   SIG 0 0        unknown exception.
+\end{verbatim}
+
+\chapter{Object File Format}
+\label{sec:objectfile}
+Object files are plain text files, suitable for editing by hand or
+generation by machine, such as the output of a compiler.  The object
+file grammar is very simple, and is presented partially in Figure
+\ref{fig:objgrammar} in Augmented Backus-Naur Form.\footnote{Crocker
+  D, Overell P. (1997) ``Augmented BNF for Syntax Specifications: ABNF
+  (RFC 2234)'' The Internet Society.
+  \texttt{http://www.ietf.org/rfc/rfc2234.txt}}
+
+\begin{figure}[ht]
+  \centering
+  \begin{verbatim}
+objectfile = 1*(line)
+line       = (intline / realline / stringline) EOL
+intline    = mnemonic WSP integer WSP integer *1(WSP comment) EOL
+realline   = mnemonic WSP integer WSP real *1(WSP comment) EOL
+stringline = mnemonic WSP integer WSP string *1(WSP comment) EOL
+\end{verbatim}
+  \caption{Partial ABNF grammar for an object file}
+  \label{fig:objgrammar}
+\end{figure}
+
+The undefined terminal symbols are largely self-explanatory.
+\texttt{EOL} represents the end-of-line character(s).  \texttt{WSP} is
+a non-zero number of whitespace (space or horizontal tab) characters.
+A \texttt{mnemonic} is a three-letter mnemonic from the PAL
+instruction set (presented in Section \ref{sec:mnemonics}).
+\texttt{integer} and \texttt{real} correspond to text that can be
+parsed as Java \texttt{int} and \texttt{float} types respectively, and
+a \texttt{string} is a string of characters delimited by the single
+quote character (\texttt{'}).  An optional comment (consisting of any
+characters other than \texttt{EOL}) can appear at the end of any line.
+
+\chapter{Instruction set}
+\label{sec:mnemonics}
+The PAL Abstract Machine instruction set is presented in summary in
+Table \ref{tab:mnemonics}.
+
+\begin{table}[hbt]
+  \centering
+  \caption{PAL Abstract Machine instruction set}
+  \label{tab:mnemonics}
+
+  \vspace{0.25in}
+
+  \framebox{
+  \begin{tabular}{lccl}
+    MST & $L$ & 0 & Mark the stack \\
+    CAL & $M$ & $A$ & Procedure call \\
+    INC & 0 & $I$ & Increment top-of-stack pointer by $I$ \\
+    JIF & 0 & $A$ & Jump if false to address $A$ \\
+    JMP & 0 & $A$ & Jump to address $A$ \\
+    LCI & 0 & $I$ & Load integer constant onto stack \\
+    LCR & 0 & $R$ & Load real constant onto stack \\
+    LCS & 0 & $S$ & Load string literal onto stack \\
+    LDA & $L$ & $D$ & Load absolute address of variable onto stack \\
+    LDI & 0 & 0 & Load value at address indicated by top-of-stack \\
+    LDV & $L$ & $D$ & Load value of a variable onto stack \\
+    LDU & 0 & 0 & Load undefined value onto stack \\
+    OPR & 0 & $I$ & Execute operation $I$ \\
+    RDI & $L$ & $D$ & Read a value into an integer variable \\
+    RDR & $L$ & $D$ & Read a value into a real variable \\
+    STI & 0 & 0 & Load (top-of-stack $-$ 1) into address at top-of-stack \\
+    STO & $L$ & $D$ & Store into a variable \\
+    SIG & 0 & $I$ & Raise signal $I$ \\
+    REH & 0 & $A$ & Register exception handler at address $A$ \\
+    & & & \\
+    Legend: & & $A$ & An address in the instruction store \\
+    & & $D$ & A displacement in the data store \\
+    & & $I$ & An integer number \\
+    & & $L$ & A level difference \\
+    & & $M$ & The number of parameters \\
+    & & $R$ & A real number \\
+    & & $S$ & A string \\
+  \end{tabular}
+  }
+\end{table}
+
+\section{\texttt{MST} $L$ 0}
+This causes the machine to mark the stack frame.  \texttt{MST} is used
+in calling a procedure or function.  A program containing a call
+should:
+\begin{enumerate}
+\item Mark the stack using \texttt{MST}.
+\item Optionally push any paramters to the call onto the stack.
+\item Call the procedure or function using \texttt{CAL}.
+\end{enumerate}
+The machine constructs the stack mark by:
+\begin{enumerate}
+\item Pushing the static link
+\item Pushing the dynamic link
+\item Pushing space for the return point
+\item Pushing space for the address of an exception handler
+\end{enumerate}
+
+$L$ is the level difference between the call to the procedure or
+function and the declaration of the procedure or function, and is used
+to calculate the static link.  For example, in the following:
+\begin{verbatim}
+    procedure A is
+    begin
+    end;
+
+    procedure B is
+    begin
+        A;
+    end;
+\end{verbatim}
+the level difference is 1 between the call to A and the declaration of
+A.  However, in the following code:
+\begin{verbatim}
+    procedure A is
+        procedure B is
+        begin
+        end;
+    begin
+    B;
+    end;
+\end{verbatim}
+the level difference is 0 as procedure B is declared at the same level
+from which it is called.
+
+\section{\texttt{CAL} $M$ $A$}
+The base of the current stack frame is moved to point at the current
+top-of-stack minus the $M$ parameters already on the stack.  The base
+of the new activation record is thus the first location \emph{above}
+the stack mark (which should have been constructed by the machine via
+the \texttt{MST} instruction immediately prior to the call).  The
+return address is stored (by the machine) in the stack mark and the
+program counter jumps to address $A$.
+
+\section{\texttt{INC} 0 $I$}
+\label{sec:instr:INC}
+The top-of-stack pointer is incremented by $I$ positions.  Any stack
+positions skipped through the increment are given the type undefined.
+This is generally used to allocate space for variables.
+
+\section{\texttt{JIF} 0 $A$}
+The value at the top-of-stack must be of type bool, otherwise an error
+is signalled and the machine will halt.  If the value is boolean false
+\emph{and} the address $A$ is within the range of existing
+instructions, the program counter jumps to address $A$.  If the value
+is boolean false and the address $A$ is out of range, an error is
+signalled and the machine will halt.  If the value is boolean true,
+this instruction has no effect.
+
+\section{\texttt{JMP} 0 $A$}
+If address $A$ is within the range of existing instructions, the
+program counter jumps to address $A$, otherwise an error is signalled
+and the machine will halt.  The instruction \texttt{JMP 0 0} is the
+correct way to terminate a program.
+
+\section{\texttt{LCI} 0 $I$}
+The integer value $I$ is pushed onto the top of the stack and tagged
+as type integer.
+
+\section{\texttt{LCR} 0 $R$}
+The real value $R$ is pushed onto the top of the stack and tagged as
+type real.
+
+\section{\texttt{LCS} 0 $S$}
+The string value $S$ is pushed onto the top of the stack and tagged
+as type string.
+
+\section{\texttt{LDA} $L$ $D$}
+The absolute address of the variable at the stack location with level
+difference $L$ and displacement $D$ is pushed onto the top of the
+stack.  (See Section \ref{sec:arch.mem} for further discussion of the
+level difference and displacement addressing scheme.)
+
+\section{\texttt{LDI} 0 0}
+The value of the variable whose address is specified in the top of the
+stack is loaded into the top of stack position.  The top-of-stack
+pointer remains unchanged.
+
+\section{\texttt{LDV} $L$ $D$}
+The value of the variable at the stack location with level difference
+$L$ and displacement $D$ is pushed onto the top of the stack.
+
+\section{\texttt{LDU} 0 0}
+A value of type undef is pushed onto the stack.  
+
+\section{\texttt{OPR} 0 $I$}
+\label{sec:instr:OPR}
+A summary of the operations provided by the \texttt{OPR} instruction is given in Table \ref{tab:ops}.
+
+\begin{table}[!hbt]
+  \centering
+  \caption{Operations provided by the \texttt{OPR} instruction}
+  \label{tab:ops}
+
+  \vspace{0.25in}
+
+  \framebox{
+    \begin{tabular}{ll}
+      $I$ & Operation \\
+      \hline
+      0 & procedure return \\
+      1 & function return \\
+      2 & negation \\
+      3 & addition \\
+      4 & subtraction \\
+      5 & multiplication \\
+      6 & division \\
+      7 & exponentiation \\
+      8 & string concatenation \\
+      9 & odd \\
+      10& equality \\
+      11& inequality \\
+      12& less-than \\
+      13& greater-than-or-equal-to \\
+      14& greater-than \\
+      15& less-than-or-equal-to \\
+      16& not (logical complement) \\
+      17& true \\
+      18& false \\
+      19& end-of-file \\
+      20& write \\
+      21& newline \\
+      22& swap the top two elements of the stack \\
+      23& duplicate the element on top of the stack \\
+      24& drop the element on top of the stack \\
+      25& integer-to-real conversion \\
+      26& real-to-integer conversion \\
+      27& integer-to-string conversion \\
+      28& real-to-string conversion \\
+      29& logical and \\
+      30& logical or \\
+      31& test exception \\
+    \end{tabular}
+  }
+\end{table}
+
+\setcounter{subsubsection}{-1}
+\subsection{\texttt{OPR 0 0}: procedure return}
+Top of stack is returned to the item at which it pointed prior to the
+call.  The program counter is set to the return address which is
+stored in the procedure stack frame and the base is set to the value
+of base before the procedure call.
+
+\subsection{\texttt{OPR 0 1}: function return}
+The value on top of the stack is taken to be the return value of the
+function.  The top-of-stack pointer is returned to the value at which
+it pointed prior to the function call.  The program counter is set to
+the return address stored in the function's stack frame and the base
+is set to the value of base before the procedure call.  Finally, the
+function result is pushed onto the top of the stack.
+
+\subsection{\texttt{OPR 0 2}: negation}
+If the value on top of the stack is of type integer or real it is
+negated.  Otherwise, an error is issued and the program terminates.
+
+\subsection{\texttt{OPR 0 3}: addition}
+If the top two values on the stack are both of type integer or both of
+type real, they are removed from the stack and replaced by their sum.
+Otherwise, an error is issued and the program terminates.
+
+\subsection{\texttt{OPR 0 4}: subtraction}
+If the top two values on the stack are both of type integer or both of
+type real, the top two values are removed from the stack, the top
+value is subtracted from the next-to-top value and the result is
+pushed onto the stack.  Otherwise, an error is issued and the program
+terminates.
+
+\subsection{\texttt{OPR 0 5}: multiplication}
+If the top two values on the stack are both of type integer or both of
+type real, they are removed from the stack and replaced by their
+product.  Otherwise, an error is issued and the program terminates.
+
+\subsection{\texttt{OPR 0 6}: division}
+If the top two values on the stack are both of type integer or both of
+type real, the top two values are removed from the stack, the
+next-to-top value is divided by the top value and the result is pushed
+onto the stack.  Otherwise, or if division by zero is attempted, an
+error is issued and the program terminates.
+
+\subsection{\texttt{OPR 0 7}: exponentiation}
+The value on top of the stack must be of type integer and the value at
+next to top may be of type integer or real.  The type of the latter
+determines the type of the result.  If these conditions are not
+satisfied then an error is issued and the program terminates.
+Otherwise the top two values are removed from the stack, the next to
+top value is raised to the power of the top value and the result is
+pushed onto the stack.
+
+\subsection{\texttt{OPR 0 8}: string concatenation}
+If the top two values on the stack are both of type string, these
+values are removed from the stack, the top value is appended to the
+next-to-top value and the result is pushed onto the stack.  Otherwise,
+an error is issued and the program terminates.
+
+\subsection{\texttt{OPR 0 9}: odd}
+If the value at the top-of-stack is not of type integer, an error is
+issued and the program terminates.  Otherwise, if the value is odd,
+the value is replaced by the boolean value true, and if the value is
+even, the value is replaced by the boolean value false.
+
+\subsection{\texttt{OPR 0 10}: equality}
+If the top two values on the stack are both of type integer or both of
+type real, they are compared for equality, and the boolean result is
+pushed onto the stack.  Otherwise, an error is issued and the program
+terminates.
+
+\subsection{\texttt{OPR 0 11}: inequality}
+If the top two values on the stack are both of type integer or both of
+type real, they are compared for inequality, and the boolean result is
+pushed onto the stack.  Otherwise, an error is issued and the program
+terminates.
+
+\subsection{\texttt{OPR 0 12}: less-than}
+If the top two values on the stack are not both of type integer or
+both of type real, an error is issued and the program terminates.
+Otherwise, the top two values are removed from the stack.  Then, if
+the next-to-top value is less than the top value the boolean value
+true is pushed onto the stack, otherwise the boolean value false is
+pushed onto the stack.
+
+\subsection{\texttt{OPR 0 13}: greater-than-or-equal-to}
+If the top two values on the stack are not both of type integer or
+both of type real, an error is issued and the program terminates.
+Otherwise, the top two values are removed from the stack.  Then, if
+the next-to-top value is greater than or equal to the top value the
+boolean value true is pushed onto the stack, otherwise the boolean
+value false is pushed onto the stack.
+
+\subsection{\texttt{OPR 0 14}: greater-than}
+If the top two values on the stack are not both of type integer or
+both of type real, an error is issued and the program terminates.
+Otherwise, the top two values are removed from the stack.  Then, if
+the next-to-top value is greater than the top value the boolean value
+true is pushed onto the stack, otherwise the boolean value false is
+pushed onto the stack.
+
+\subsection{\texttt{OPR 0 15}: less-than-or-equal-to}
+If the top two values on the stack are not both of type integer or
+both of type real, an error is issued and the program terminates.
+Otherwise, the top two values are removed from the stack.  Then, if
+the next-to-top value is less than or equal to the top value the
+boolean value true is pushed onto the stack, otherwise the boolean
+value false is pushed onto the stack.
+
+\subsection{\texttt{OPR 0 16}: logical \emph{not}}
+If the value on top of the stack is of type bool, it is replaced by
+its logical complement.  Otherwise, an error is issued and the program
+terminates.
+
+\subsection{\texttt{OPR 0 17}: true}
+The boolean value true is pushed onto the stack.
+
+\subsection{\texttt{OPR 0 18}: false}
+The boolean value false is pushed onto the stack.
+
+\subsection{\texttt{OPR 0 19}: eof}
+If the end of the input file has been reached, the boolean value true
+is pushed onto the stack.  Otherwise, the boolean value false is
+pushed onto the stack.
+
+\subsection{\texttt{OPR 0 20}: write}
+If the value on top of the stack is of type boolean or undefined, an
+error is issued and the program terminates.  Otherwise, the value on
+top of the stack is removed and written to the output file.
+
+\subsection{\texttt{OPR 0 21}: newline}
+A newline is written to the output file.
+
+\subsection{\texttt{OPR 0 22}: swap the top two elements of the stack}
+The top two elements on the stack are swapped.
+
+\subsection{\texttt{OPR 0 23}: duplicate the element on top of the stack}
+A copy of the top element of the stack is pushed onto the stack.
+
+\subsection{\texttt{OPR 0 24}: drop the element on top of the stack}
+The top element of the stack is removed.
+
+\subsection{\texttt{OPR 0 25}: integer-to-real conversion}
+If the value on top of the stack is of type integer, it is replaced by
+the real representation of the value.  Otherwise, an error is issued
+and the program terminates.
+
+\subsection{\texttt{OPR 0 26}: real-to-integer conversion}
+If the value on top of the stack is of type real, it is replaced by
+the integer representation of the value.  Otherwise, an error is
+issued and the program terminates.
+
+\subsection{\texttt{OPR 0 27}: integer-to-string conversion}
+If the value on top of the stack is of type integer, it is replaced by
+its string representation.  Otherwise, an error is issued and the
+program terminates.
+
+\subsection{\texttt{OPR 0 28}: real-to-string conversion}
+If the value on top of the stack is of type real, it is replaced by
+its string representation.  Otherwise, an error is issued and the
+program terminates.
+
+\subsection{\texttt{OPR 0 29}: logical \emph{and}}
+If the top two values on the stack are both of type bool, they are
+removed from the stack and replaced with the logical \emph{and} of the
+two values.  Otherwise, an error is issued and the program terminates.
+
+\subsection{\texttt{OPR 0 30}: logical \emph{or}}
+If the top two values on the stack are both of type bool, they are
+removed from the stack and replaced with the logical \emph{or} of the
+two values.  Otherwise, an error is issued and the program terminates.
+
+\subsection{\texttt{OPR 0 31}: is(exception)}
+\label{sec:instr:OPR31}
+If the value on top of the stack is not of type integer, an error is
+issued and the program terminates.  Otherwise, the top value is
+removed from the stack and compared to the number of the currently
+active exception.  If the two numbers are equal, the boolean value
+true is pushed onto the stack, otherwise the boolean value false is
+pushed onto the stack.
+
+\section{\texttt{RDI} $L$ $D$}
+\label{sec:instr:RDI}
+The machine reads an integer value from input and stores it in the
+location indicated by the level difference $L$ and displacement $D$.
+If the input is at end-of-file exception 4 is raised.  If the next
+line in the input file is not an integer, exception 3 is raised.
+
+\section{\texttt{RDR} $L$ $D$}
+\label{sec:instr:RDR}
+The machine reads a real value from input and stores it in the
+location indicated by the level difference $L$ and displacement $D$.
+If the input is at end-of-file exception 4 is raised.  If the next
+line in the input file is not a real, exception 3 is raised.
+
+\section{\texttt{STI} 0 0}
+Loads the value in (top-of-stack -- 1) into the variable at the
+absolute address specified by the value on top of the stack.  The top
+two elements are removed from the stack.
+
+\section{\texttt{STO} $L$ $D$}
+Load the value on top of the stack into the stack location specified
+by the level difference $L$ and displacement $D$.  The top element of
+the stack is removed.
+
+\section{\texttt{SIG} 0 $I$}
+\label{sec:instr:SIG}
+This instruction causes the entire run-time stack to be searched
+looking for an exception handler.  If a handler is found, all
+activation records down to the frame containing the handler are
+discarded, and control is transferred to the handler.  The exception
+system is covered in Section \ref{sec:exceptions}.
+
+\section{\texttt{REH} 0 $A$}
+\label{sec:instr:REH}
+Registers an exception handler at address $A$.  Address $A$ is stored
+in the stack mark as a reference to the exception handling code for
+this stack frame.  An address of zero indicates that no exception
+handler is registered.  The exception system is covered in Section
+\ref{sec:exceptions}.
+
+\chapter{Java simulator}
+\section{History}
+The implementation of the PAL machine in Java described in this
+chapter was written by the authors of this document in an effort to
+provide a portable implementation of the machine simulator for the
+Compiler Construction course in the Department of Computer Science at
+the University of Adelaide.  It was written from scratch using the
+existing Ada implementation of the machine as a reference.  The
+lineage of the Ada implementation can be traced as follows (according
+to comments in the Ada source):
+\begin{itemize}
+\item Original Pascal implementation by Chris Marlin
+\item Translation from Pascal to Ada by Michael Oudshoorn
+\item Implementation of indirection and exception handling by Kevin Maciunas
+\end{itemize}
+
+\section{Using the Java simulator}
+The simulator is invoked from the command line:
+\begin{verbatim}
+> java -jar PAL.jar objectfile
+\end{verbatim}
+In this example, the simulator will use \texttt{objectfile} as the
+object file, and will perform input and output from the console.  If
+no object file is specified, the simulator searches for a file named
+\texttt{CODE} in the current directory, and complains if that file is
+not found.  Input and output redirection can be used in the standard
+way.  For example,
+\begin{verbatim}
+> java -jar PAL.jar objectfile < input > output
+\end{verbatim}
+will cause the simulator to draw any input from the file
+\texttt{input} and write any output to the file \texttt{output}.
+
+\section{Constraints of the implementation}
+The simulator imposes the following arbitrary limitations:
+\begin{enumerate}
+\item The size of the code store is limited to 1000 instructions (and
+  their operands).
+\item The size of the data store is limited to 500 items.
+\end{enumerate}
+
+\end{document}

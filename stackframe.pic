@@ -1,0 +1,16 @@
+.PS
+right;
+
+BOXES: [
+	down;
+	A: box "Local Space" width 1.75 height 0.8;
+	box "Exception Handler" width 1.75 height 0.4 fill 0.1;
+	box "Return Point" width 1.75 height 0.4 fill 0.1;
+	box "Dynamic Link" width 1.75 height 0.4 fill 0.1;
+	box "Static Link" width 1.75 height 0.4 fill 0.1;
+]
+move to BOXES.A.se;
+move;
+CAP: box "Base" invis;
+arrow from CAP.w to BOXES.A.se;
+.PE
