@@ -41,9 +41,10 @@ public class DataStack {
 
         data = new ArrayList();
 
-        //Set up mark stack part for main program activation record.
+        // Set up mark stack part for main program activation record.
         markStack(0, 0);
 
+        // Sets the first frame's base address.
         setBase(top);
 
         maxSize = (max > 0 ? max : 0);
