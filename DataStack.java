@@ -30,17 +30,14 @@ public class DataStack {
      * Constructor - allows user to specify a limit on maximum size.
      */
     public DataStack(int max) {
+        top = 0;
+
         data = new ArrayList();
 
         stackFrames = new LinkedList();
 
-        //FIXME - should there be a stack mark for the lowest level,
-        //e.g. to hold exception handler offsets?
-
-        //Base address of first stack frame.
-        stackFrames.add(new Integer(0));
-
-        top = 0;
+        //Set up mark stack part for main program activation record.
+        markStack(0, 0);
 
         maxSize = max;
     }
@@ -48,7 +45,7 @@ public class DataStack {
     /**
      * Put a data object onto the top of the stack.
      */
-    public void push(Data datum) throws OutOfMemoryError{
+    public void push(Data datum) throws OutOfMemoryError {
         top++;
 
         data.add(datum);
@@ -60,33 +57,6 @@ public class DataStack {
     }
 
     /**
-     * Overwrite a data location elsewhere in the stack.
-     * The location is given as an absolute stack address.
-     */
-    public void put(Data datum, int address) {
-        //FIXME check bounds on address?
-        data.add(address, datum);
-    }
-
-    //FIXME - should we have these modifying methods, or should
-    // we just read out the actual Data object, then modify it?
-
-    /**
-     * Overwrite a data location elsewhere in the stack.
-     * The location is given as a level difference and offset.
-     */
-    public void put(Data datum, int levelDiff, int offset) {
-        //FIXME check bounds on address?  That includes making
-        // sure the offset remains below the next stack frame...
-
-        int address = offset;
-
-        address += ((Integer)stackFrames.get(stackFrames.size() - levelDiff)).intValue();
-
-        data.set(address, datum);
-    }
-
-    /**
      * Pop the top value from the stack.
      */
     public Data pop() {
@@ -94,7 +64,7 @@ public class DataStack {
     }
 
     /**
-     * Peek at the top of the stack.  FIXME do we need this?
+     * Peek at the top of the stack.
      */
     public Data peek() {
         return (Data)data.get(top - 1);
@@ -104,8 +74,10 @@ public class DataStack {
      * Read a data location elsewhere in the stack.
      * The location is given as an absolute stack address.
      */
-    public Data get(int address) {
-        //FIXME check bounds on address?
+    public Data get(int address) throws IndexOutOfBoundsException {
+        if(address < 0 || address >= top)
+            throw new IndexOutOfBoundsException("PAL address out of bounds.");
+
         return (Data)data.get(address);
     }
 
@@ -113,10 +85,12 @@ public class DataStack {
      * Read a data location elsewhere in the stack.
      * The location is given as a level difference and offset.
      */
-    public Data get(int levelDiff, int offset) {
-        //FIXME check bounds on address?
+    public Data get(int levelDiff, int offset) throws IndexOutOfBoundsException {
         int address = offset;
         address += ((Integer)stackFrames.get(stackFrames.size() - levelDiff)).intValue();
+
+        if(address < 0 || address >= top)
+            throw new IndexOutOfBoundsException("PAL address out of bounds.");
 
         return (Data)data.get(address);
     }
@@ -124,7 +98,7 @@ public class DataStack {
     /**
      * Advance the TOS pointer by a given amount, initialising memory as we go.
      */
-    public void incTop(int amount) throws OutOfMemoryError{
+    public void incTop(int amount) throws OutOfMemoryError {
         for(int i = 0;i < amount;i++) {
             data.add(new Data(Data.UNDEF, null));
             top++;
@@ -142,7 +116,7 @@ public class DataStack {
      * - static link
      * - dynamic link
      */
-    public void markStack(int staticLink, int dynamicLink) {
+    public void markStack(int staticLink, int dynamicLink) throws OutOfMemoryError {
         push(new Data(Data.INT, new Integer(staticLink)));
         push(new Data(Data.INT, new Integer(dynamicLink)));
 
@@ -155,10 +129,13 @@ public class DataStack {
      * Get the absolute address for a stack location, given the level
      * difference and offset.
      */
-    public int getAddress(int levelDiff, int offset) {
+    public int getAddress(int levelDiff, int offset) throws IndexOutOfBoundsException {
         int result = offset;
 
         result += ((Integer)stackFrames.get(stackFrames.size() - levelDiff)).intValue();
+
+        if(result < 0 || result >= top)
+            throw new IndexOutOfBoundsException("PAL address out of bounds.");
 
         return result;
     }
