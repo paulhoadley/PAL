@@ -5,7 +5,7 @@
 /**
  * A class to represent a tagged datum.
  */
-public class Data {
+public class Data implements Cloneable {
     /** The type of this datum. */
     private int type;
 
@@ -34,6 +34,27 @@ public class Data {
 	this.type = type;
 	this.value = value;
 	return;
+    }
+
+    /**
+     * Method to duplicate this object.
+     */
+    public Object clone() {
+        Object valCopy = null;
+
+        if(value == null) {
+            valCopy = null;
+        } else if(value instanceof Integer) {
+            valCopy = new Integer(((Integer)value).intValue());
+        } else if(value instanceof Float) {
+            valCopy = new Float(((Float)value).floatValue());
+        } else if(value instanceof Boolean) {
+            valCopy = new Boolean(((Boolean)value).booleanValue());
+        } else if(value instanceof String) {
+            valCopy = new String(value.toString());
+        }
+
+        return new Data(this.type, valCopy);
     }
 
     /**
