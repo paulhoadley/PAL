@@ -15,13 +15,17 @@ public class Code {
     /** The second argument to the instruction. */
     private Object second;
 
+    /** The line number from the source file. */
+    private int lineno;
+
     /**
      * Constructor.
      */
-    public Code(String mnemonic, int first, Object second) {
+    public Code(String mnemonic, int first, Object second, int lineno) {
 	this.mnemonic = mnemonic;
 	this.first = first;
 	this.second = second;
+	this.lineno = lineno;
 	return;
     }
 
@@ -44,5 +48,9 @@ public class Code {
      */
     public Object getSecond() {
 	return second;
+    }
+
+    public String toString() {
+	return (lineno + ": " + mnemonic + " " + first + " " + second);
     }
 }
