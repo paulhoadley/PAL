@@ -26,7 +26,7 @@ public class PAL {
     /** Stack for data. */
     private DataStack dataStack;
 
-    // The program counter.
+    /** The program counter. */
     private int pc;
 
     /**
