@@ -21,7 +21,8 @@ public class DataStack {
     /** Reference to the next free space on top of the stack (TOS). */
     private int top;
 
-    /** Maximum stack size. A value <= 0 indicates no limit.*/
+    /** Maximum stack size. A value less than or equal to 0 indicates
+        no limit.*/
     private int maxSize;
 
     /**
