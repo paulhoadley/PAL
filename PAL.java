@@ -246,6 +246,7 @@ public class PAL {
                 int destination = ((Integer)o).intValue();
 
                 if(destination == 0) {
+                    // "JMP 0 0" signifies program termination.
                     die(0);
                 }
 
@@ -574,16 +575,13 @@ public class PAL {
 	case 2:
 	    // Negate the value on TOS if it is an integer or real.
 
-	    tos = dataStack.pop();
+	    tos = dataStack.peek();
 	    if (tos.getType() == Data.INT) {
 		tos.setValue(new Integer(-(((Integer)tos.getValue()).intValue())));
-		dataStack.push(tos);
 	    } else if (tos.getType() == Data.REAL) {
 		tos.setValue(new Float(-(((Float)tos.getValue()).floatValue())));
-		dataStack.push(tos);
 	    } else {
-		dataStack.push(tos);
-                error(currInst, "Cannot negate boolean or string value.");
+                error(currInst, "Cannot negate boolean, string or UNDEF value.");
                 die(1);
 	    }
 	    break;
@@ -785,7 +783,7 @@ public class PAL {
 
             if(tos.getType() != Data.BOOL) {
                 dataStack.push(tos);
-                error(currInst, "OPR 0 16 - top of stack not a boolean.");
+                error(currInst, "Top of stack must be a boolean.");
                 die(1);
             }
 
@@ -860,7 +858,7 @@ public class PAL {
 		error(currInst, "Integer to real conversion can only be performed on value of type integer.");
 		die(1);
 	    }
-	    dataStack.push(new Data(Data.REAL, new Float((float)(((Integer)(dataStack.pop().getValue())).intValue()))));
+	    dataStack.push(new Data(Data.REAL, new Float(((Integer)(dataStack.pop().getValue())).floatValue())));
 	    break;
 	case 26:
 	    // Convert the real at TOS to an integer.
@@ -869,7 +867,7 @@ public class PAL {
 		error(currInst, "Real to integer conversion can only be performed on value of type real.");
 		die(1);
 	    }
-	    dataStack.push(new Data(Data.INT, new Integer((int)(((Float)(dataStack.pop().getValue())).floatValue()))));
+	    dataStack.push(new Data(Data.INT, new Integer(((Float)(dataStack.pop().getValue())).intValue())));
 	    break;
 	case 27:
 	    // Convert the integer at TOS to a string.
@@ -878,7 +876,7 @@ public class PAL {
 		error(currInst, "Integer to string conversion can only be performed on value of type integer.");
 		die(1);
 	    }
-	    dataStack.push(new Data(Data.STRING, ((Integer)(dataStack.pop().getValue())).toString()));
+	    dataStack.push(new Data(Data.STRING, dataStack.pop().getValue().toString()));
 	    break;
 	case 28:
 	    // Convert the real at TOS to a string.
@@ -887,7 +885,7 @@ public class PAL {
 		error(currInst, "Real to string conversion can only be performed on value of type real.");
 		die(1);
 	    }
-	    dataStack.push(new Data(Data.STRING, ((Float)(dataStack.pop().getValue())).toString()));
+	    dataStack.push(new Data(Data.STRING, dataStack.pop().getValue().toString()));
 	    break;
 	case 29:
 	    // Logical and of two booleans.
@@ -991,7 +989,7 @@ public class PAL {
 
         boolean moreFrames = true;
 
-        while(moreFrames)  {
+        while(true)  {
             handlerLocation = dataStack.get(0, -1);
 
             if(handlerLocation.getType() != Data.INT) {
@@ -1020,7 +1018,7 @@ public class PAL {
                 // Remember the dynamic link.
                 dynamicLink = dataStack.get(0, -3);
 
-                // Pop data from the stack back down to the last
+                // Pop data from the stack back down to the previous
                 // frame.
                 int popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
 
