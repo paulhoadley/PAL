@@ -328,7 +328,7 @@ public class PAL {
 	case 23:
 	    // Duplicate the element at the top of the stack.
             Data target = dataStack.peek();
-	    dataStack.push(new Data(target.getType(), new Integer(target.getValue())));
+	    dataStack.push(new Data(target.getType(), new Integer(((Integer)target.getValue()).intValue())));
 	    break;
 	case 24:
 	    // Discard the element at the top of the stack.
