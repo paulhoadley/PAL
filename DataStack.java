@@ -46,6 +46,8 @@ public class DataStack {
         //Set up mark stack part for main program activation record.
         markStack(0, 0);
 
+        pushBase(top);
+
         maxSize = max;
     }
 
@@ -162,8 +164,22 @@ public class DataStack {
         push(new Data(Data.INT, new Integer(dynamicLink)));
 
         incTop(2);
+    }
 
-        stackFrames.add(new Integer(top));
+    /**
+     * Push a frame base address onto the stack frame list.
+     *
+     * @param address The address to store as the current frame base.
+     */
+    public void pushBase(int address) {
+        stackFrames.add(new Integer(address));
+    }
+
+    /**
+     * Pop a frame base address off of the stack frame list.
+     */
+    public void popBase() {
+        stackFrames.remove(stackFrames.size() - 1);
     }
 
     /**

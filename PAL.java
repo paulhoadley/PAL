@@ -140,9 +140,13 @@ public class PAL {
 
 	    switch (Mnemonic.mnemonicToInt(currInst.getMnemonic())) {
             case Mnemonic.CAL:
+                //Set return point field in stack mark.
                 Data returnPoint = dataStack.get(dataStack.getTop() - currInst.getFirst() - 2);
                 returnPoint.setType(Data.INT);
                 returnPoint.setValue(new Integer(pc));
+
+                //Set new frame base.
+                dataStack.pushBase(dataStack.getTop() - currInst.getFirst());
 
                 pc = ((Integer)currInst.getSecond()).intValue();
 
@@ -414,29 +418,41 @@ public class PAL {
 	switch (opr) {
         case 0:
             //Procedure return.
+
+            //Set program counter.
             Data returnPoint = dataStack.get(0, -2);
             pc = ((Integer)returnPoint.getValue()).intValue();
 
+            //Pop data from the stack back down to the last frame.
             int popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
 
             for(int i = 0;i < popCount;i++) {
                 dataStack.pop();
             }
 
+            //Pop last stack frame base pointer.
+            dataStack.popBase();
+
             break;
         case 1:
             //Function return.
             Data returnValue = dataStack.pop();
 
+            //Set program counter.
             returnPoint = dataStack.get(0, -2);
             pc = ((Integer)returnPoint.getValue()).intValue();
 
+            //Pop data from the stack back down to the last frame.
             popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
 
             for(int i = 0;i < popCount;i++) {
                 dataStack.pop();
             }
 
+            //Pop last stack frame base pointer.
+            dataStack.popBase();
+
+            //Leave the return value on top of the stack.
             dataStack.push(returnValue);
 
             break;
