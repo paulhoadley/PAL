@@ -364,6 +364,26 @@ public class PAL {
 	    }
 	    dataStack.push(new Data(Data.STRING, ((Float)(dataStack.pop().getValue())).toString()));
 	    break;
+	case 29:
+	    // Logical and of two booleans.
+	    Data bool1 = dataStack.pop();
+	    Data bool2 = dataStack.pop();
+	    if (bool1.getType() != Data.BOOL || bool2.getType() != Data.BOOL) {
+		error(nextInst, "Logical and can only be performed on values of type boolean.");
+		die(1);
+	    }
+	    dataStack.push(new Data(Data.BOOL, new Boolean(((Boolean)(bool1.getValue())).booleanValue() & ((Boolean)(bool2.getValue())).booleanValue())));
+	    break;
+	case 30:
+	    // Logical or of two booleans.
+	    bool1 = dataStack.pop();
+	    bool2 = dataStack.pop();
+	    if (bool1.getType() != Data.BOOL || bool2.getType() != Data.BOOL) {
+		error(nextInst, "Logical or can only be performed on values of type boolean.");
+		die(1);
+	    }
+	    dataStack.push(new Data(Data.BOOL, new Boolean(((Boolean)(bool1.getValue())).booleanValue() | ((Boolean)(bool2.getValue())).booleanValue())));
+	    break;
 	default:
 	    System.out.println("OPR " + opr + ": not implemented.");
 	}
