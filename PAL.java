@@ -63,7 +63,15 @@ public class PAL {
 	PAL machine = new PAL();
 
 	// Execute.
-	machine.execute();
+	try {
+            machine.execute();
+        } catch (OutOfMemoryError e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        } catch (IndexOutOfBoundsException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
 
 	return;
     }
@@ -101,7 +109,8 @@ public class PAL {
 		// source.
 		if (!(st.hasMoreTokens())) {
 		    line = br.readLine();
-		    continue;
+		    lineno++;
+                    continue;
 		}
 
 		// May not come in groups of three, in which case,
