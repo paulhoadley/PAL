@@ -432,6 +432,7 @@ public class PAL {
 			// EOF reached.
 			currentException = reachedEOF;
                         raiseException(currInst);
+                        break;
 		    }
 		    int intVal = Integer.parseInt(intLine);
 		    // Put the val in the stack.
@@ -456,6 +457,7 @@ public class PAL {
 			// EOF reached.
 			currentException = reachedEOF;
                         raiseException(currInst);
+                        break;
 		    }
 		    float realVal = Float.parseFloat(realLine);
 		    // Put the val in the stack.
