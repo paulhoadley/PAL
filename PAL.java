@@ -306,10 +306,7 @@ public class PAL {
 		// Read an integer from stdin
 		String intLine = "";
 		try {
-//		    BufferedReader intRdr = new BufferedReader(new InputStreamReader(System.in));
 		    intLine = inputReader.readLine();
-
-                    System.out.println(intLine);
 		    if (intLine == null) {
 			// EOF reached
 			error(currInst, "EOF reached during integer read.");
@@ -331,7 +328,6 @@ public class PAL {
 		// Read a real from stdin
 		String realLine = "";
 		try {
-//		    BufferedReader realRdr = new BufferedReader(new InputStreamReader(System.in));
 		    realLine = inputReader.readLine();
 		    if (realLine == null) {
 			// EOF reached
