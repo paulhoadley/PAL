@@ -21,24 +21,24 @@ public class Mnemonic {
                                             "SIG", "STI", "STO"};
 
     public static final int CAL = mnemonicToInt("CAL");
-    public static final int INC = mnemonicToInt("CAL");
-    public static final int JIF = mnemonicToInt("CAL");
-    public static final int JMP = mnemonicToInt("CAL");
-    public static final int LCI = mnemonicToInt("CAL");
-    public static final int LCR = mnemonicToInt("CAL");
-    public static final int LCS = mnemonicToInt("CAL");
-    public static final int LDA = mnemonicToInt("CAL");
-    public static final int LDI = mnemonicToInt("CAL");
-    public static final int LDU = mnemonicToInt("CAL");
-    public static final int LDV = mnemonicToInt("CAL");
-    public static final int MST = mnemonicToInt("CAL");
-    public static final int OPR = mnemonicToInt("CAL");
-    public static final int RDI = mnemonicToInt("CAL");
-    public static final int RDR = mnemonicToInt("CAL");
-    public static final int REH = mnemonicToInt("CAL");
-    public static final int SIG = mnemonicToInt("CAL");
-    public static final int STI = mnemonicToInt("CAL");
-    public static final int STO = mnemonicToInt("CAL");
+    public static final int INC = mnemonicToInt("INC");
+    public static final int JIF = mnemonicToInt("JIF");
+    public static final int JMP = mnemonicToInt("JMP");
+    public static final int LCI = mnemonicToInt("LCI");
+    public static final int LCR = mnemonicToInt("LCR");
+    public static final int LCS = mnemonicToInt("LCS");
+    public static final int LDA = mnemonicToInt("LDA");
+    public static final int LDI = mnemonicToInt("LDI");
+    public static final int LDU = mnemonicToInt("LDU");
+    public static final int LDV = mnemonicToInt("LDV");
+    public static final int MST = mnemonicToInt("MST");
+    public static final int OPR = mnemonicToInt("OPR");
+    public static final int RDI = mnemonicToInt("RDI");
+    public static final int RDR = mnemonicToInt("RDR");
+    public static final int REH = mnemonicToInt("REH");
+    public static final int SIG = mnemonicToInt("SIG");
+    public static final int STI = mnemonicToInt("STI");
+    public static final int STO = mnemonicToInt("STO");
 
     public static int mnemonicToInt(String m) {
 
