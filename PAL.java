@@ -158,7 +158,7 @@ public class PAL {
 		System.out.println(nextInst.getMnemonic() + ": not implemented.");
 	    }
 
-	    // Bump the program counter/
+	    // Bump the program counter.
 	    pc++;
 	}
 
@@ -195,8 +195,9 @@ public class PAL {
 	case 4:
 	case 5:
 	case 6:
-	    // Pop values at TOS and TOS-1, add them and push result
-	    // onto TOS.
+	    // Pop values at TOS and TOS-1,
+	    // add/subtract/multiply/divide them (depending on the
+	    // opcode) and push result onto TOS.
 	    Data val1 = dataStack.pop();
 	    Data val2 = dataStack.pop();
 	    if (val1.getType() != val2.getType()) {
@@ -310,8 +311,8 @@ public class PAL {
 	    break;
 	case 20:
 	    // Pop value on TOS and print it.
-	    Object tos = dataStack.pop();
-	    System.out.print(((Data)tos).getValue());
+	    Data tos = dataStack.pop();
+	    System.out.print(tos.getValue());
 	    break;
 	case 21:
 	    // Print a newline.
@@ -326,7 +327,8 @@ public class PAL {
 	    break;
 	case 23:
 	    // Duplicate the element at the top of the stack.
-	    dataStack.push(dataStack.peek());
+            Data target = dataStack.peek();
+	    dataStack.push(new Data(target.getType(), new Integer(target.getValue())));
 	    break;
 	case 24:
 	    // Discard the element at the top of the stack.
@@ -372,7 +374,7 @@ public class PAL {
 		error(nextInst, "Logical and can only be performed on values of type boolean.");
 		die(1);
 	    }
-	    dataStack.push(new Data(Data.BOOL, new Boolean(((Boolean)(bool1.getValue())).booleanValue() & ((Boolean)(bool2.getValue())).booleanValue())));
+	    dataStack.push(new Data(Data.BOOL, new Boolean(((Boolean)(bool1.getValue())).booleanValue() && ((Boolean)(bool2.getValue())).booleanValue())));
 	    break;
 	case 30:
 	    // Logical or of two booleans.
@@ -382,7 +384,7 @@ public class PAL {
 		error(nextInst, "Logical or can only be performed on values of type boolean.");
 		die(1);
 	    }
-	    dataStack.push(new Data(Data.BOOL, new Boolean(((Boolean)(bool1.getValue())).booleanValue() | ((Boolean)(bool2.getValue())).booleanValue())));
+	    dataStack.push(new Data(Data.BOOL, new Boolean(((Boolean)(bool1.getValue())).booleanValue() || ((Boolean)(bool2.getValue())).booleanValue())));
 	    break;
 	default:
 	    System.out.println("OPR " + opr + ": not implemented.");
