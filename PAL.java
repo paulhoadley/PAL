@@ -980,9 +980,9 @@ public class PAL {
                 //An address of 0 means no handler - throw away this
                 //frame and keep searching.
 
-                //First, check if this is the lowest frame - the lowest
-                //frame has a base address of 4.
-                if(dataStack.getAddress(0,0) == 4) {
+                //First, check if this is the lowest frame - the
+                //lowest frame's stack mark begins at address 0.
+                if(dataStack.getAddress(0,-4) == 0) {
                     moreFrames = false;
                     break;
                 }
