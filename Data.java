@@ -65,4 +65,12 @@ public class Data {
 	this.value = value;
 	return;
     }
+
+    /**
+     * Returns a String representation of the value in this Data
+     * object.
+     */
+    public String toString() {
+	return value.toString();
+    }
 }
