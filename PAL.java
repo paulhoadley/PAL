@@ -247,6 +247,28 @@ public class PAL {
 		}
 	    }
 	    break;
+	case 7:
+	    // Raise the value at TOS-1 to the power of the value at
+	    // TOS, pop both and push the result.
+	    if (dataStack.peek().getType() != Data.INT) {
+		error(nextInst, "Exponent must be of type integer.");
+		die(1);
+	    }
+	    Data exp = dataStack.pop();
+	    int baseType = dataStack.peek().getType();
+	    if (baseType != Data.INT && baseType != Data.REAL) {
+		error(nextInst, "Base must be of type integer or real.");
+		die(1);
+	    }
+	    Data base = dataStack.pop();
+	    if (baseType == Data.INT) {
+		int intAnswer = (int)Math.pow(((Integer)base.getValue()).intValue(), ((Integer)exp.getValue()).intValue());
+		dataStack.push(new Data(Data.INT, new Integer(intAnswer)));
+	    } else {
+		float floatAnswer = (float)Math.pow(((Float)base.getValue()).floatValue(), ((Integer)exp.getValue()).intValue());
+		dataStack.push(new Data(Data.REAL, new Float(floatAnswer)));
+	    }
+	    break;
 	case 9:
 	    // Test if TOS is an odd integer.
 	    if (dataStack.peek().getType() != Data.INT) {
