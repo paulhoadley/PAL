@@ -1,0 +1,10 @@
+REH 0 4
+SIG 0 1
+JMP 0 0
+LCI 0 1
+OPR 0 31
+JIF 0 10
+LCS 0 'Exception 1 - should not be able to catch this!'
+OPR 0 20
+OPR 0 21
+JMP 0 0

@@ -1,0 +1,10 @@
+REH 0 4
+SIG 0 0
+JMP 0 0
+LCI 0 0
+OPR 0 31
+JIF 0 10
+LCS 0 'Exception 0'
+OPR 0 20
+OPR 0 21
+JMP 0 0

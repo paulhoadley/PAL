@@ -1,0 +1,15 @@
+REH 0 4
+SIG 0 34 --Some bogus user defined exception
+JMP 0 0
+LCI 0 7
+OPR 0 31 --_should_ return false
+JIF 0 11
+LCS 0 'Exception 1 - should not be able to catch this!'
+OPR 0 20
+OPR 0 21
+JMP 0 0
+LCS 0 'Correct.'
+OPR 0 20
+OPR 0 21
+JMP 0 0
+
