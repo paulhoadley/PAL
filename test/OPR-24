@@ -1,0 +1,4 @@
+INC 0 1
+OPR 0 24
+JIF 0 42 -- generate a stack dump, should only have four "0"'s in it.
+JMP 0 0

@@ -1,0 +1,45 @@
+LCI 0 2
+LCI 0 13
+OPR 0 15
+JIF 0 9
+LCS 0 'opr 15 worked (2 <= 13).'
+OPR 0 20
+OPR 0 21
+JMP 0 12
+LCS 0 'opr 15 didnt work for 2 and 13'
+OPR 0 20
+OPR 0 21
+LCI 0 -3
+LCI 0 1
+OPR 0 15
+JIF 0 20
+LCS 0 'opr 15 does work for -3 and 1.'
+OPR 0 20
+OPR 0 21
+JMP 0 23
+LCS 0 'opr 15 didnt work for -3 and 1'
+OPR 0 20
+OPR 0 21
+LCR 0 14.4
+LCR 0 2.0
+OPR 0 15
+JIF 0 31
+LCS 0 'opr 15 didnt work.'
+OPR 0 20
+OPR 0 21
+JMP 0 34
+LCS 0 'opr 15 did work for 14.4 and 2.0'
+OPR 0 20
+OPR 0 21
+LCR 0 2
+LCR 0 2
+OPR 0 15
+JIF 0 42
+LCS 0 'opr 15 did work for 2.0 and 2.0.'
+OPR 0 20
+OPR 0 21
+JMP 0 0
+LCS 0 'opr 15 doesnt work for 2.0 and 2.0'
+OPR 0 20
+OPR 0 21
+JMP 0 0

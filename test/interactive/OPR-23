@@ -1,0 +1,25 @@
+INC 0 1
+LCS 0 'Enter an integer.'
+OPR 0 20
+OPR 0 21
+RDI 0 0
+OPR 0 23
+LCS 0 'The duped values are:'
+OPR 0 20
+OPR 0 21
+OPR 0 20
+OPR 0 21
+OPR 0 20
+OPR 0 21
+LCS 0 'Now make sure they really are duped - enter two more distinct ints.'
+OPR 0 20
+OPR 0 21
+INC 0 1
+RDI 0 0
+OPR 0 23 --dupe
+RDI 0 0 --read into one of the dupes...
+OPR 0 20
+OPR 0 21
+OPR 0 20
+OPR 0 21
+JMP 0 0

@@ -1,0 +1,15 @@
+INC 0 2
+LCS 0 'Enter two integers.'
+OPR 0 20
+OPR 0 21
+RDI 0 1
+RDI 0 0
+OPR 0 22
+LCS 0 'The swapped values are:'
+OPR 0 20
+OPR 0 21
+OPR 0 20
+OPR 0 21
+OPR 0 20
+OPR 0 21
+JMP 0 0

@@ -1,0 +1,36 @@
+JMP 0 2 --Jump to start of main program
+LCS 0 'Hello' 
+LCS 0 ' world' 
+OPR 0 8 
+LCS 0 ' et' 
+LCS 0 'cetera ' 
+LCS 0 '& soforth' 
+OPR 0 8 
+OPR 0 8 
+OPR 0 8 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+LCI 0 1 
+OPR 0 2 
+OPR 0 2 
+OPR 0 2 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+LCR 0 3.2 
+OPR 0 2 
+OPR 0 28 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+LCS 0 'string1 ' 
+LCI 0 1 
+OPR 0 2 
+OPR 0 2 
+OPR 0 27 
+OPR 0 8 
+LCR 0 3.2 
+OPR 0 2 
+OPR 0 28 
+OPR 0 8 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+JMP 0 0 
