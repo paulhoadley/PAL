@@ -21,7 +21,7 @@ public class DataStack {
     /** Reference to the next free space on top of the stack (TOS). */
     private int top;
 
-    /** Maximum stack size. */
+    /** Maximum stack size. A value of 0 indicates no limit.*/
     private int maxSize;
 
     /**
@@ -108,7 +108,7 @@ public class DataStack {
      * Read a data location elsewhere in the stack.  The location is
      * given as a level difference and offset.
      *
-     * @param levelDiff The difference in dynamic scope level between
+     * @param levelDiff The difference in static scope level between
      * the current activation record, and the activation record of the
      * target location.
      * @param offset The offset into the target stack frame.
@@ -158,7 +158,7 @@ public class DataStack {
         push(new Data(Data.INT, new Integer(dynamicLink)));
 
         //Leave space for return point.
-        incTop(1);
+        push(new Data(Data.INT, new Integer(0)));
 
         //Dummy exception handler address - indicates that no handler
         //is registered.
@@ -178,7 +178,7 @@ public class DataStack {
      * Get the absolute address for a stack location, given the level
      * difference and offset.
      *
-     * @param levelDiff The difference in dynamic scope level between
+     * @param levelDiff The difference in static scope level between
      * the current activation record, and the activation record of the
      * target location.
      * @param offset The offset into the target stack frame.
@@ -190,6 +190,7 @@ public class DataStack {
         int result = frameBase;
 
         for (int i = 0;i < levelDiff;i++) {
+            //Extract the static link from the stack mark.
             result = ((Integer)get(result - 4).getValue()).intValue();
         }
 
