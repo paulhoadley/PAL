@@ -1,5 +1,7 @@
 /* DataStack.java */
 
+/* $Id$ */
+
 import java.util.List;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -8,13 +10,12 @@ import java.util.LinkedList;
  * An abstract data type representing the PAL data stack.
  */
 public class DataStack {
-    /**The underlying container */
+    /**The underlying containers */
     private List data, stackFrames;
 
-    /**Reference index of the top of the stack (TOS) */
+    /**Reference to the next free space on top of the stack (TOS) */
     int top;
 
-    //FIXME doesn't actually do anything yet - maybe throw an exception?
     /**Maximum stack size */
     int maxSize;
 
@@ -23,13 +24,6 @@ public class DataStack {
      */
     public DataStack() {
         this(0);
-//          data = new ArrayList();
-
-//          stackFrames = new LinkedList();
-
-//          top = 0;
-
-//          maxSize = 0;
     }
 
     /**
@@ -51,16 +45,18 @@ public class DataStack {
         maxSize = max;
     }
 
-    //FIXME - should we have these modifiying methods, or should
-    // we just read out the actual Data object, then modify it?
-
     /**
      * Put a data object onto the top of the stack.
      */
-    public void push(Data datum) {
+    public void push(Data datum) throws OutOfMemoryError{
         top++;
 
         data.add(datum);
+
+        if(maxSize == 0 || top < maxSize)
+            return;
+
+        throw new OutOfMemoryError("PAL Stack out of memory.");
     }
 
     /**
@@ -71,6 +67,9 @@ public class DataStack {
         //FIXME check bounds on address?
         data.add(address, datum);
     }
+
+    //FIXME - should we have these modifying methods, or should
+    // we just read out the actual Data object, then modify it?
 
     /**
      * Overwrite a data location elsewhere in the stack.
@@ -98,7 +97,7 @@ public class DataStack {
      * Peek at the top of the stack.  FIXME do we need this?
      */
     public Data peek() {
-        return (Data)data.get(top);
+        return (Data)data.get(top - 1);
     }
 
     /**
@@ -125,11 +124,16 @@ public class DataStack {
     /**
      * Advance the TOS pointer by a given amount, initialising memory as we go.
      */
-    public void incTop(int amount) {
+    public void incTop(int amount) throws OutOfMemoryError{
         for(int i = 0;i < amount;i++) {
-            top++;
             data.set(top, new Data(Data.UNDEF, null));
+            top++;
         }
+
+        if(maxSize == 0 || top < maxSize)
+            return;
+
+        throw new OutOfMemoryError("PAL Stack out of memory");
     }
 
     /**
@@ -145,5 +149,17 @@ public class DataStack {
         incTop(2);
 
         stackFrames.add(new Integer(top));
+    }
+
+    /**
+     * Get the absolute address for a stack location, given the level
+     * difference and offset.
+     */
+    public int getAddress(int levelDiff, int offset) {
+        int result = offset;
+
+        result += ((Integer)stackFrames.get(stackFrames.size() - levelDiff)).intValue();
+
+        return result;
     }
 }
