@@ -102,12 +102,22 @@ public class PAL {
 	    Object o = nextInst.getSecond();
 
 	    switch (Mnemonic.mnemonicToInt(nextInst.getMnemonic())) {
+	    case Mnemonic.INC:
+		if (!(o instanceof Integer)) {
+		    error(nextInst, "Argument to INC must be an integer.");
+                    die(1);
+                } else {
+		    for (int i = 0; i < ((Integer)o).intValue(); i++) {
+			dataStack.push(new Data(Type.UNDEF, null));
+		    }
+                }
+                break;
 	    case Mnemonic.LCI:
 		if (!(o instanceof Integer)) {
 		    error(nextInst, "Argument to LCI must be an integer.");
                     die(1);
                 } else {
-                    dataStack.push(o);
+                    dataStack.push(new Data(Type.INT, o));
                 }
                 break;
 	    case Mnemonic.LCR:
@@ -115,7 +125,7 @@ public class PAL {
 		    error(nextInst, "Argument to LCR must be a real.");
                     die(1);
                 } else {
-                    dataStack.push(o);
+                    dataStack.push(new Data(Type.REAL, o));
                 }
                 break;
 	    case Mnemonic.LCS:
@@ -123,7 +133,7 @@ public class PAL {
 		    error(nextInst, "Argument to LCS must be a string.");
 		    die(1);
 		} else {
-		    dataStack.push(o);
+		    dataStack.push(new Data(Type.STRING, o));
 		}
 		break;
 	    case Mnemonic.OPR:
@@ -133,6 +143,7 @@ public class PAL {
 		System.out.println(nextInst.getMnemonic() + ": not implemented.");
 	    }
 
+	    // Bump the program counter/
 	    pc++;
 	}
 
@@ -154,7 +165,7 @@ public class PAL {
 	switch (opr) {
 	case 20:
 	    Object tos = dataStack.peek();
-	    System.out.print(tos);
+	    System.out.print(((Data)tos).getValue());
 	    break;
 	case 21:
 	    System.out.println();
