@@ -22,6 +22,11 @@ CLASSFILES:=	$(patsubst %.java, %.class, $(shell find . -name '*.java'))
 .PHONY:	all
 all:		${CLASSFILES}
 
+#Dependencies between classes.
+PAL.class:DataStack.class Data.class Code.class Mnemonic.class
+
+DataStack.class:Data.class
+
 .PHONY: clean
 clean:
 	rm -f *~
