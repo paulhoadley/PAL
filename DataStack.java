@@ -4,7 +4,7 @@
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.Stack;
 
 /**
  * An abstract data type representing the PAL data stack.
@@ -16,7 +16,7 @@ public class DataStack {
     private List data;
 
     /** A container for easy access to the stack frames. */
-    private List stackFrames;
+    private Stack stackFrames;
 
     /** Reference to the next free space on top of the stack (TOS). */
     int top;
@@ -41,7 +41,7 @@ public class DataStack {
 
         data = new ArrayList();
 
-        stackFrames = new LinkedList();
+        stackFrames = new Stack();
 
         //Set up mark stack part for main program activation record.
         markStack(0, 0);
@@ -172,14 +172,14 @@ public class DataStack {
      * @param address The address to store as the current frame base.
      */
     public void pushBase(int address) {
-        stackFrames.add(new Integer(address));
+        stackFrames.push(new Integer(address));
     }
 
     /**
      * Pop a frame base address off of the stack frame list.
      */
     public void popBase() {
-        stackFrames.remove(stackFrames.size() - 1);
+        stackFrames.pop();
     }
 
     /**
