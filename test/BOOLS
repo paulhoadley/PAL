@@ -1,0 +1,39 @@
+JMP 0 2 --Jump to start of main program
+OPR 0 17 
+JIF 0 8 --Test "if" condition
+LCS 0 'true! woohoo!' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+JMP 0 11 --Leave "if" statement.
+LCS 0 'false.  Bugger.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+OPR 0 18 
+JIF 0 17 --Test "if" condition
+LCS 0 'should be false now!  Bugger.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+JMP 0 20 --Leave "if" statement.
+LCS 0 'false! woohoo!' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+OPR 0 17 
+JIF 0 26 --Test "if" condition
+LCS 0 'temp is correct...' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+JMP 0 29 --Leave "if" statement.
+LCS 0 'temp is fscked.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+OPR 0 17 
+OPR 0 16 
+JIF 0 36 --Test "if" condition
+LCS 0 'not is not correct.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+JMP 0 39 --Leave "if" statement.
+LCS 0 'not is correct.' 
+OPR 0 20 --"write" builtin function
+OPR 0 21 
+JMP 0 0 
