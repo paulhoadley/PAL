@@ -125,7 +125,7 @@ public class PAL {
      * Execute the instructions in the machine's code memory.  The
      * instructions are implemented in accordance with the
      * specification found here: <a
-     * href="http://www.adelaide.edu.au/users/third/cc/handouts/pal.pdf">The
+     * href="http://www.cs.adelaide.edu.au/users/third/cc/handouts/pal.pdf">The
      * PAL Machine</a>.
      */
     private void execute() {
