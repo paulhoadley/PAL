@@ -139,4 +139,13 @@ public class DataStack {
 
         return result;
     }
+
+    public String toString() {
+        String result = new String();
+        for(int i = 0;i < top;i++) {
+            result += get(i) + "\n";
+        }
+
+        return result;
+    }
 }
