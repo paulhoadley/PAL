@@ -49,7 +49,7 @@ public class Code {
     }
 
     /**
-     * Returns the three letter menmonic for this instruction.
+     * Returns the three letter mnemonic for this instruction.
      *
      * @return A <code>String</code> containing the three letter
      * mnemonic for this instruction.
