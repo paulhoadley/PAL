@@ -1,0 +1,13 @@
+86.25
+Runtime Error:
+test/OPR-7:11:Exponent must be of type integer.
+OPR 0 7
+
+Stack dump:
+----------
+1.1
+2
+UNDEF
+UNDEF
+0
+0
