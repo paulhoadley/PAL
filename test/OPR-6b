@@ -1,0 +1,6 @@
+LCR 0 0
+LCR 0 12
+OPR 0 6
+LCR 0 0
+OPR 0 6
+JMP 0 0
