@@ -9,6 +9,21 @@ public class Data {
     /** The type of this datum. */
     private int type;
 
+    /** Constant to represent integer data type. */
+    public static final int INT = 0;
+
+    /** Constant to represent real data type. */
+    public static final int REAL = 1;
+
+    /** Constant to represent string data type. */
+    public static final int STRING = 2;
+
+    /** Constant to represent boolean data type. */
+    public static final int BOOL = 3;
+
+    /** Constant to represent undefined data type. */
+    public static final int UNDEF = 4;
+
     /** The value of this datum. */
     private Object value;
 
