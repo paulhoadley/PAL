@@ -127,6 +127,29 @@ public class DataStack {
     }
 
     /**
+     * Put a data value in the stack at a specified level difference
+     * and offset.  This is the counterpart for the {@link
+     * DataStack#get <code>get</code>} method with the same signature,
+     * and is useful for variable assignment.
+     *
+     * @param d A <code>Data</code> object.
+     * @param levelDiff The difference in dynamic scope level between
+     * the current activation record, and the activation record of the
+     * target location.
+     * @param offset The offset into the target stack frame.
+     * @exception java.lang.IndexOutOfBoundsException if the supplied
+     * address is out of bounds.
+     */
+    public void add(Data d, int levelDiff, int offset) throws IndexOutOfBoundsException {
+	int address = offset;
+	address += ((Integer)stackFrames.get(stackFrames.size() - 1 - levelDiff)).intValue();
+        if(address < 0 || address >= top)
+            throw new IndexOutOfBoundsException("PAL address out of bounds.");
+	data.remove(address);
+	data.add(address, d);
+    }
+
+    /**
      * Advance the TOS pointer by a given amount, initialising memory
      * to type UNDEF as we go.
      *
