@@ -1,0 +1,15 @@
+INC	0	1
+RDI	0	0
+LDV	0	0
+OPR	0	20
+OPR	0	21
+OPR	0	19
+JIF	0	12
+LCS	0	'No more input.'
+OPR	0	20
+OPR	0	21
+JMP	0	0
+LCS	0	'More input!'
+OPR	0	20
+OPR	0	21
+JMP	0	1
