@@ -23,6 +23,9 @@ SRC=		$(wildcard *.java)
 SIMPLETESTS=	$(filter-out %.out %.ref test/CVS test/interactive, $(wildcard test/*))
 INPUTTESTS=	$(filter-out %.in %.out %.ref test/interactive/CVS, $(wildcard test/interactive/*))
 
+TARBALL=	PAL.tar
+TARBALLFILES=	${SRC} ${SIMPLETESTS} ${INPUTTESTS} Makefile
+
 %.class:	%.java
 	$(JAVAC) $<
 
@@ -45,6 +48,7 @@ clean:
 	rm -f test/interactive/*.out
 	rm -f ${JARFILE}
 	rm -f jar-manifest
+	rm -f ${TARBALL}
 
 .PHONY: docs
 docs:
@@ -56,6 +60,10 @@ jar:	${CLASSFILES}
 	echo "Main-class: PAL" > jar-manifest
 	${JAR} ${JAROPTS} ${JARFILE} jar-manifest ${CLASSFILES}
 	rm jar-manifest
+
+.PHONY: tarball
+tarball:
+	tar -cvf ${TARBALL} ${TARBALLFILES}
 
 .PHONY: test
 test:
