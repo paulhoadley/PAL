@@ -200,11 +200,15 @@ public class PAL {
 	    Data val1 = dataStack.pop();
 	    Data val2 = dataStack.pop();
 	    if (val1.getType() != val2.getType()) {
+		dataStack.push(val2);
+		dataStack.push(val1);
 		error(nextInst, "Values for arithmetic operations must be of same type.");
 		die(1);
 	    } else {
 		int type = val1.getType();
 		if (type != Data.INT && type != Data.REAL) {
+		    dataStack.push(val2);
+		    dataStack.push(val1);
 		    error(nextInst, "Values for arithmetic operations must be of type integer or real.");
 		    die(1);
 		}
@@ -269,6 +273,17 @@ public class PAL {
 		dataStack.push(new Data(Data.REAL, new Float(floatAnswer)));
 	    }
 	    break;
+	case 8:
+	    Data str1 = dataStack.pop();
+	    Data str2 = dataStack.pop();
+	    if (str1.getType() != Data.STRING || str2.getType() != Data.STRING) {
+		dataStack.push(str1);
+		dataStack.push(str2);
+		error(nextInst, "Both arguments to OPR 8 must be of type string.");
+		die(1);
+	    }
+	    dataStack.push(new Data(Data.STRING, (String)(str2.getValue()) + (String)(str1.getValue())));
+	    break;
 	case 9:
 	    // Test if TOS is an odd integer.
 	    if (dataStack.peek().getType() != Data.INT) {
@@ -301,6 +316,13 @@ public class PAL {
 	case 21:
 	    // Print a newline.
 	    System.out.println();
+	    break;
+	case 22:
+	    // Swap the top two elements on the stack.
+	    Data tmp1 = dataStack.pop();
+	    Data tmp2 = dataSTack.pop();
+	    dataStack.push(tmp1);
+	    dataStack.push(tmp2);
 	    break;
 	default:
 	    System.out.println("OPR " + opr + ": not implemented.");
