@@ -193,11 +193,11 @@ public class PAL {
 	// We are expecting an integer, real or string.
 	Object output;
 	try {
-	    output = new Integer(Integer.parseInt(input));
+	    output = new Integer(input);
 	    return output;
 	} catch (NumberFormatException e1) {
 	    try {
-		output = new Float(Float.parseFloat(input));
+		output = new Float(input);
 		return output;
 	    } catch (NumberFormatException e2) {
 		return input;
