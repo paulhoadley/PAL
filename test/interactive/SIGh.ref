@@ -1,0 +1,12 @@
+
+Runtime Error:
+test/interactive/SIGh:4:Exception #4 never handled!
+SIG 0 0
+
+Stack dump:
+----------
+UNDEF
+0
+0
+0
+0
