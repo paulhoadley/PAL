@@ -50,7 +50,11 @@ public class Code {
 	return second;
     }
 
+    public int getLineNo() {
+	return lineno;
+    }
+
     public String toString() {
-	return (lineno + ": " + mnemonic + " " + first + " " + second);
+	return (mnemonic + " " + first + " " + second);
     }
 }

@@ -70,9 +70,7 @@ public class PAL {
 		    String s = st.nextToken();
 		    if (s.startsWith("'")) {
 			int start = line.indexOf('\'');
-			System.err.println(start);
 			int end = line.substring(start+1).indexOf('\'');
-			System.err.println(end);
 			second = line.substring(start - 1, start + end + 2).trim();
 		    } else {
 			second = makeObject(s);
@@ -94,13 +92,6 @@ public class PAL {
      * Execute the instructions in the machine's code memory.
      */
     private void execute() {
-	System.out.println("execute()");
-
-	// Dump the code store.
-	for (int i = 0; i < codeMem.size(); i++) {
-	    System.out.println(codeMem.get(i));
-	}
-
 	// The program counter.
 	int pc = 0;
 
@@ -108,7 +99,7 @@ public class PAL {
 
 	while (pc < codeMem.size()) {
 	    nextInst = (Code)codeMem.get(pc);
-	    System.out.println("Current instruction: " + nextInst);
+	    //System.out.println("Current instruction: " + nextInst);
 
 	    // Bump the program counter.
 	    pc++;
@@ -453,9 +444,13 @@ public class PAL {
      * Print an error.
      */
     private void error(Code nextInst, String s) {
-	System.err.println("Error:");
+	// Ensure the error is always started on a new line.
+	System.err.println();
+	System.err.println("Runtime Error:");
+	System.err.println(filename + ":" + nextInst.getLineNo() + ":" + s);
 	System.err.println(nextInst);
-	System.err.println(s);
+	System.err.println("\nStack dump:");
+	System.err.println("----------");
 	System.err.print(dataStack);
 	return;
     }
