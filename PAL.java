@@ -148,7 +148,7 @@ public class PAL {
                 //Set new frame base.
                 dataStack.pushBase(dataStack.getTop() - currInst.getFirst());
 
-                pc = ((Integer)currInst.getSecond()).intValue();
+                pc = ((Integer)currInst.getSecond()).intValue() - 1;
 
                 break;
 	    case Mnemonic.INC:
