@@ -69,11 +69,11 @@ tarball:
 .PHONY: test
 test:
 	@rm -f test/*.out
-	@$(foreach test, ${SIMPLETESTS}, ${ECHO} "Testing ${test}"; \
+	-@$(foreach test, ${SIMPLETESTS}, ${ECHO} "Testing ${test}"; \
 			${JAVA} PAL ${test} > ${test}.out 2>&1; \
 			diff ${test}.out ${test}.ref; )
 
-	@$(foreach test, ${INPUTTESTS}, ${ECHO} "Testing ${test}"; \
+	-@$(foreach test, ${INPUTTESTS}, ${ECHO} "Testing ${test}"; \
 			${JAVA} PAL ${test} < ${test}.in > ${test}.out 2>&1; \
 			diff ${test}.out ${test}.ref; )
 	@${ECHO} "Testing complete."
