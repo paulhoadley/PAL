@@ -38,6 +38,13 @@ public class PAL {
     /** The number of the present exception. */
     private int currentException;
 
+    /** Constants representing the predefined exception types. */
+    private static final int reraise = 0;
+    private static final int programAbort = 1;
+    private static final int typeMismatch = 3;
+    private static final int reachedEOF = 4;
+
+
     /**
      * Main method for command line operation.
      *
@@ -322,8 +329,8 @@ public class PAL {
 		    intLine = inputReader.readLine();
 		    if (intLine == null) {
 			// EOF reached
-			error(currInst, "EOF reached during integer read.");
-			die(1);
+			currentException = reachedEOF;
+                        raiseException(currInst);
 		    }
 		    int intVal = Integer.parseInt(intLine);
 		    // Put the val in the stack
@@ -333,8 +340,8 @@ public class PAL {
                 } catch (IOException e1) {
                     System.err.println(e1);
                 } catch (NumberFormatException e2) {
-                    error(currInst, "RDI: expecting integer, got " + intLine);
-		    die(1);
+                    currentException = typeMismatch;
+                    raiseException(currInst);
 		}
 		break;
 	    case Mnemonic.RDR:
@@ -344,8 +351,8 @@ public class PAL {
 		    realLine = inputReader.readLine();
 		    if (realLine == null) {
 			// EOF reached
-			error(currInst, "EOF reached during real read.");
-			die(1);
+			currentException = reachedEOF;
+                        raiseException(currInst);
 		    }
 		    float realVal = Float.parseFloat(realLine);
 		    // Put the val in the stack
@@ -355,8 +362,8 @@ public class PAL {
 		} catch (IOException e1) {
 		    System.err.println(e1);
 		} catch (NumberFormatException e2) {
-		    error(currInst, "RDR: expecting real, got " + realLine);
-		    die(1);
+                    currentException = typeMismatch;
+                    raiseException(currInst);
 		}
 		break;
             case Mnemonic.REH:
@@ -374,15 +381,17 @@ public class PAL {
 
                 break;
             case Mnemonic.SIG:
-                //If the argument is 0, re-raise the current exception.
-                //Otherwise, raise the exception specified by the argument.
+                //If the argument is 0 (the predefined "re-raise"
+                //code), re-raise the current exception.  Otherwise,
+                //raise the exception specified by the argument.
+
                 if(!(o instanceof Integer)) {
                     error(currInst, "Argument to SIG must be an integer.");
                     die(1);
                 }
 
                 int excType = ((Integer)o).intValue();
-                if(excType != 0) {
+                if(excType != reraise) {
                     currentException = excType;
                 }
 
@@ -876,7 +885,8 @@ public class PAL {
      * exception.  Used to add information to error messages.
      */
     private void raiseException(Code currInst) {
-        if(currentException == 1) {
+        if(currentException == programAbort) {
+            error(currInst, "A Program Abort signal was raised.");
             die(1);
         }
 
