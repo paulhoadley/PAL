@@ -1,0 +1,16 @@
+LCI	0	1	This file is meant only to
+LCI	0	1	test the basics of operation,
+LCI	0	2	such as the ability to parse
+LCI	0	2	the input file correctly.
+LCI	0	3	No errors are expected.
+LCI	0	4	No output is expected.
+LCI 0 5
+LCI 0			6
+LCI 0		7	foobar
+
+
+
+LCI	0	8	3 blank lines to EOF.
+
+
+

@@ -1,0 +1,10 @@
+LCI	0	1	Expect two 1s.
+INC	0	3
+LCI	0	1
+OPR	0	20
+OPR	0	21
+OPR	0	24
+OPR	0	24
+OPR	0	24
+OPR	0	20
+OPR	0	21

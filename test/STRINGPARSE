@@ -1,0 +1,6 @@
+LCS	0	'foo    bar'	FooBAR
+OPR	0	20
+OPR	0	21
+LCS	0	'foo'		Comment
+OPR	0	20
+OPR	0	21
