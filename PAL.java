@@ -319,7 +319,7 @@ public class PAL {
 	System.err.println("Error:");
 	System.err.println(nextInst);
 	System.err.println(s);
-	System.err.println(dataStack);
+	System.err.print(dataStack);
 	return;
     }
 
