@@ -409,8 +409,7 @@ public class PAL {
 
                 // Get the location of the exception handler pointer
                 // in the highest stack mark.
-                address = dataStack.getAddress(0, -1);
-                Data storeLocation = dataStack.get(address);
+                Data storeLocation = dataStack.get(0, -1);
 
                 storeLocation.setType(Data.INT);
                 storeLocation.setValue(o);
@@ -429,6 +428,15 @@ public class PAL {
                 int excType = ((Integer)o).intValue();
                 if(excType != reraise) {
                     currentException = excType;
+                } else {
+                    //Re-raise the current exception.  SIG 0 0 is
+                    //typically called by an exception handler when it
+                    //can't handle the current exception type.  We
+                    //don't want to run that same handler again!  A
+                    //simple way to achieve this is to nullify the
+                    //current exception handler pointer.
+                    Data handlerLocation = dataStack.get(0, -1);
+                    handlerLocation.setValue(new Integer(0));
                 }
 
                 //Raise the exception...
@@ -1010,7 +1018,7 @@ public class PAL {
 
         if(!moreFrames) {
             //No handler was found.
-            error(currInst, "Exception never handled!");
+            error(currInst, "Exception #" + currentException + " never handled!");
             die(1);
         }
     }
