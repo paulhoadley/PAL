@@ -26,6 +26,9 @@ public class PAL {
     /** Stack for data. */
     private DataStack dataStack;
 
+    // The program counter.
+    private int pc;
+
     /**
      * Main method for command line operation.
      *
@@ -120,8 +123,8 @@ public class PAL {
      * PAL Machine</a>.
      */
     private void execute() {
-	// The program counter.
-	int pc = 0;
+        //Initialise program counter.
+        pc = 0;
 
 	Code currInst;
 
@@ -409,6 +412,34 @@ public class PAL {
 	    die(1);
 	}
 	switch (opr) {
+        case 0:
+            //Procedure return.
+            Data returnPoint = dataStack.get(0, -2);
+            pc = ((Integer)returnPoint.getValue()).intValue();
+
+            int popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
+
+            for(int i = 0;i < popCount;i++) {
+                dataStack.pop();
+            }
+
+            break;
+        case 1:
+            //Function return.
+            Data returnValue = dataStack.pop();
+
+            returnPoint = dataStack.get(0, -2);
+            pc = ((Integer)returnPoint.getValue()).intValue();
+
+            popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
+
+            for(int i = 0;i < popCount;i++) {
+                dataStack.pop();
+            }
+
+            dataStack.push(returnValue);
+
+            break;
 	case 2:
 	    // Negate the value on TOS if it is an integer or real.
 	    Data d = dataStack.pop();
