@@ -7,7 +7,7 @@ JIKESPATH=	${JAVA_HOME}/jre/lib/rt.jar
 JAVAC=		jikes -classpath ${JIKESPATH}
 JAVADOC=	${JAVA_HOME}/bin/javadoc
 DOCDIR=		html
-JAVADOCOPTS=	-version -author -windowtitle "DLX Project" \
+JAVADOCOPTS=	-version -author -windowtitle "PAL Machine Simulator" \
 		-d ${DOCDIR} -private
 
 SRC=		$(wildcard *.java)
