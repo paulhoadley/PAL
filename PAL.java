@@ -67,7 +67,7 @@ public class PAL {
 
 	return;
     }
-    
+
     /**
      * Constructor.  Reads all of the statements in {@link
      * PAL#filename <code>filename</code>} into {@link Code
@@ -447,8 +447,8 @@ public class PAL {
 
                 break;
             case Mnemonic.STI:
-                //Store the value in the top-of-stack - 1 in the
-                //address specified by the number in top-of-stack.
+                // Store the value in the top-of-stack - 1 in the
+                // address specified by the number in top-of-stack.
 
                 tos = dataStack.pop();
 
@@ -466,19 +466,19 @@ public class PAL {
 
                 break;
             case Mnemonic.STO:
-                //Store the value on top of the stack in the location
-                //indicated.
+                // Store the value on top of the stack in the location
+                // indicated.
 
                 if(!(o instanceof Integer)) {
                     error(currInst, "Argument to STO must be an integer.");
                     die(1);
                 }
 
-                ntos = dataStack.pop();
+                tos = dataStack.pop();
                 loadedVal = dataStack.get(currInst.getFirst(), ((Integer)o).intValue());
 
-                loadedVal.setType(ntos.getType());
-                loadedVal.setValue(ntos.getValue());
+                loadedVal.setType(tos.getType());
+                loadedVal.setValue(tos.getValue());
 
                 break;
 	    default:
@@ -971,12 +971,13 @@ public class PAL {
      * exception.  Used to add information to error messages.
      */
     private void raiseException(Code currInst) {
+        // The Program Abort signal cannot be caught.
         if(currentException == programAbort) {
             error(currInst, "A Program Abort signal was raised.");
             die(1);
         }
 
-        Data handlerLocation;
+        Data handlerLocation, dynamicLink;
         int handlerAddress;
 
         boolean moreFrames = true;
@@ -997,39 +998,41 @@ public class PAL {
             }
 
             if(handlerAddress == 0) {
-                //An address of 0 means no handler - throw away this
-                //frame and keep searching.
+                // An address of 0 means no handler - throw away this
+                // frame and keep searching.
 
-                //First, check if this is the lowest frame - the
-                //lowest frame's stack mark begins at address 0.
+                // First, check if this is the lowest frame - the
+                // lowest frame's stack mark begins at address 0.
                 if(dataStack.getAddress(0,-4) == 0) {
                     moreFrames = false;
                     break;
                 }
 
-                //Remember the dynamic link.
-                Data dynamicLink = dataStack.get(0, -3);
+                // Remember the dynamic link.
+                dynamicLink = dataStack.get(0, -3);
 
-                //Pop data from the stack back down to the last frame.
+                // Pop data from the stack back down to the last
+                // frame.
                 int popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
 
                 for(int i = 0;i < popCount;i++) {
                     dataStack.pop();
                 }
 
-                //Set the new frame base using the remembered dynamic link.
+                // Set the new frame base using the remembered dynamic
+                // link.
                 dataStack.setBase(((Integer)dynamicLink.getValue()).intValue());
             } else {
-                //There is an exception handler.
+                // There is an exception handler.
                 pc = handlerAddress - 1;
 
-                //Stop throwing out frames.
+                // Stop throwing out frames.
                 break;
             }
         }
 
         if(!moreFrames) {
-            //No handler was found.
+            // No handler was found.
             error(currInst, "Exception #" + currentException + " never handled!");
             die(1);
         }
