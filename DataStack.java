@@ -158,11 +158,11 @@ public class DataStack {
         push(new Data(Data.INT, new Integer(staticLink)));
         push(new Data(Data.INT, new Integer(dynamicLink)));
 
-        //Leave space for return point.
+        // Leave space for return point.
         push(new Data(Data.INT, new Integer(0)));
 
-        //Dummy exception handler address - indicates that no handler
-        //is registered.
+        // Dummy exception handler address - indicates that no handler
+        // is registered.
         push(new Data(Data.INT, new Integer(0)));
     }
 
@@ -191,7 +191,7 @@ public class DataStack {
         int result = frameBase;
 
         for (int i = 0;i < levelDiff;i++) {
-            //Extract the static link from the stack mark.
+            // Extract the static link from the stack mark.
             result = ((Integer)get(result - 4).getValue()).intValue();
         }
 
