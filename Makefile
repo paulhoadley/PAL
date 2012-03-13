@@ -35,10 +35,10 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-JAVA_HOME=	/usr/local/java
-JIKESPATH=	${JAVA_HOME}/jre/lib/rt.jar
-JAVAC=		jikes -classpath ${JIKESPATH}
-#JAVAC=		javac
+#JAVA_HOME=	/usr/local/java
+#JIKESPATH=	${JAVA_HOME}/jre/lib/rt.jar
+#JAVAC=		jikes -classpath ${JIKESPATH}
+JAVAC=		javac
 JAVA=		${JAVA_HOME}/bin/java
 JAVADOC=	${JAVA_HOME}/bin/javadoc
 DOCDIR=		html
