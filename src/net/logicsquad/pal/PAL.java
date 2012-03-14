@@ -1,3 +1,5 @@
+package net.logicsquad.pal;
+
 /* PAL.java */
 
 /**
