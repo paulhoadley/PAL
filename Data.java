@@ -1,7 +1,5 @@
 /* Data.java */
 
-/* $Id$ */
-
 /**
  * PAL Machine Simulator: An implementation in Java
  *
