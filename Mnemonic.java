@@ -43,7 +43,7 @@ import java.util.Arrays;
  * provide conversion methods between <code>int</code> and
  * <code>String</code> representations.
  *
- * @author Philip Roberts &lt;philip.roberts@student.adelaide.edu.au&gt;
+ * @author Philip Roberts &lt;philip.roberts@gmail.com&gt;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
 public class Mnemonic {

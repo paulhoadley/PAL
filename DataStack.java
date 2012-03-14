@@ -43,7 +43,7 @@ import java.util.Stack;
 /**
  * An abstract data type representing the PAL data stack.
  *
- * @author Philip Roberts &lt;philip.roberts@student.adelaide.edu.au&gt;
+ * @author Philip Roberts &lt;philip.roberts@gmail.com&gt;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
 public class DataStack {
