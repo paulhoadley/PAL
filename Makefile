@@ -45,10 +45,10 @@ JAROPTS=	-cfm
 
 ECHO=		echo
 
-PS2PDF=		/usr/local/ghostscript-6.53/lib/ps2pdf
-DVIPS=		/usr/local/bin/dvips
-LATEX=		/usr/local/bin/latex
-GPIC=		/usr/local/bin/gpic
+PS2PDF=		ps2pdf
+DVIPS=		dvips
+LATEX=		latex
+GPIC=		pic
 
 SRC=		$(wildcard *.java)
 SIMPLETESTS=	$(filter-out %.out %.ref test/CVS test/interactive, $(wildcard test/*))
