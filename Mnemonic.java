@@ -43,7 +43,6 @@ import java.util.Arrays;
  * provide conversion methods between <code>int</code> and
  * <code>String</code> representations.
  *
- * @version $Revision$
  * @author Philip Roberts &lt;philip.roberts@student.adelaide.edu.au&gt;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */

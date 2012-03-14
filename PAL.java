@@ -42,7 +42,6 @@ import java.util.*;
 /**
  * The PAL abstract machine simulator.
  *
- * @version $Revision$
  * @author Philip Roberts &lt;philip.roberts@student.adelaide.edu.au&gt;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
