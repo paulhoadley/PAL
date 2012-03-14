@@ -1,6 +1,4 @@
 # Makefile for PAL Machine Simulator
-#
-# $Id$
 
 # PAL Machine Simulator: An implementation in Java
 #
