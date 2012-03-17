@@ -1,20 +1,29 @@
 # Makefile for PAL Machine Simulator
 
+# Interesting targets
+# * jar: Builds PAL.jar
+# * docs: Builds Javadoc API documentation
+# * tests: Runs tests
+# * clean: Cleans up
+
+# Javadocs
 DOCDIR=		html
 JAVADOCOPTS=	-version -author -windowtitle "PAL Machine Simulator" \
 		-d ${DOCDIR} -private -sourcepath src
 
+# JAR
 JARFILE=	PAL.jar
 JAROPTS=	-cm -C src -f
 
+# Manual
 PS2PDF=		ps2pdf
 DVIPS=		dvips
 LATEX=		latex
 GPIC=		pic
 
+# Tests
 SIMPLETESTS=	$(filter-out %.out %.ref, $(wildcard test/basic/*))
 INPUTTESTS=	$(filter-out %.in %.out %.ref, $(wildcard test/interactive/*))
-
 JAVA_SOURCE=	$(shell find src -name '*.java')
 
 .PHONY:	compile
