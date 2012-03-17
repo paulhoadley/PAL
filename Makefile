@@ -8,10 +8,10 @@ JAVA=		java
 JAVADOC=	javadoc
 DOCDIR=		html
 JAVADOCOPTS=	-version -author -windowtitle "PAL Machine Simulator" \
-		-d ${DOCDIR} -private
+		-d ${DOCDIR} -private -sourcepath src
 JAR=		jar
 JARFILE=	PAL.jar
-JAROPTS=	-cfm
+JAROPTS=	-cm -C src -f
 
 ECHO=		echo
 
@@ -21,25 +21,20 @@ LATEX=		latex
 GPIC=		pic
 
 SRC=		$(wildcard *.java)
-SIMPLETESTS=	$(filter-out %.out %.ref test/CVS test/interactive, $(wildcard test/*))
-INPUTTESTS=	$(filter-out %.in %.out %.ref test/interactive/CVS, $(wildcard test/interactive/*))
+SIMPLETESTS=	$(filter-out %.out %.ref, $(wildcard test/basic/*))
+INPUTTESTS=	$(filter-out %.in %.out %.ref, $(wildcard test/interactive/*))
 
 
 TARBALL=	PAL.tar
 TARBALLFILES=	${SRC} $(filter-out %.out test/CVS test/interactive, $(wildcard test/*)) $(filter-out %.out test/interactive/CVS, $(wildcard test/interactive/*)) Makefile COPYRIGHT PAL.pdf
 
-%.class:	%.java
-	$(JAVAC) $<
+CLASSFILES:=	$(patsubst %.java, %.class, $(shell cd src; find . -name '*.java'))
+JAVA_SOURCE=	$(shell find src -name '*.java')
 
-CLASSFILES:=	$(patsubst %.java, %.class, $(shell find . -name '*.java'))
-
-.PHONY:	all
-all:		${CLASSFILES}
-
-#Dependencies between classes.
-PAL.class:DataStack.class Data.class Code.class Mnemonic.class
-
-DataStack.class:Data.class
+.PHONY:	compile
+compile:
+	mkdir -p bin
+	javac -d bin ${JAVA_SOURCE}
 
 stackframe.tex:	stackframe.pic
 	${GPIC} -t stackframe.pic > stackframe.tex
@@ -55,8 +50,9 @@ PAL.pdf:	PAL.tex stackframe.tex
 clean:
 	rm -f *~
 	rm -f *.class
+	rm -rf bin
 	rm -rf ${DOCDIR}
-	rm -f test/*.out
+	rm -f test/basic/*.out
 	rm -f test/interactive/*.out
 	rm -f ${JARFILE}
 	rm -f jar-manifest
@@ -67,12 +63,12 @@ clean:
 .PHONY: docs
 docs:
 	mkdir -p ${DOCDIR}
-	${JAVADOC} ${JAVADOCOPTS} ${SRC}
+	${JAVADOC} ${JAVADOCOPTS} net.logicsquad.pal
 
 .PHONY: jar
-jar:	${CLASSFILES}
-	echo "Main-class: PAL" > jar-manifest
-	${JAR} ${JAROPTS} ${JARFILE} jar-manifest ${CLASSFILES}
+jar:	compile
+	echo "Main-class: net/logicsquad/pal/PAL" > jar-manifest
+	${JAR} cmf jar-manifest ${JARFILE} -C bin net
 	rm jar-manifest
 
 .PHONY: tarball
@@ -80,14 +76,15 @@ tarball:	PAL.pdf
 	tar -cvf ${TARBALL} ${TARBALLFILES}
 
 .PHONY: test
-test:
-	@rm -f test/*.out
+test:	jar
+	@rm -f test/basic/*.out
+	@rm -f test/interactive/*.out
 	-@$(foreach test, ${SIMPLETESTS}, ${ECHO} "Testing ${test}"; \
-			${JAVA} PAL ${test} > ${test}.out 2>&1; \
+			${JAVA} -jar PAL.jar ${test} > ${test}.out 2>&1; \
 			diff ${test}.out ${test}.ref; )
 
 	-@$(foreach test, ${INPUTTESTS}, ${ECHO} "Testing ${test}"; \
-			${JAVA} PAL ${test} < ${test}.in > ${test}.out 2>&1; \
+			${JAVA} -jar PAL.jar ${test} < ${test}.in > ${test}.out 2>&1; \
 			diff ${test}.out ${test}.ref; )
 	@${ECHO} "Testing complete."
 
@@ -95,17 +92,17 @@ test:
 .PHONY: test-ref
 test-ref:
 	@${ECHO} -n "Removing old .ref files..."
-	@rm -f test/*.ref
+	@rm -f test/basic/*.ref
 	@rm -f test/interactive/*.ref
 	@${ECHO} "Done."
 
 # Build the .ref files for each of the SIMPLETESTS
 	@${ECHO} -n "Creating .ref files for simple tests..."
-	-@$(foreach test, ${SIMPLETESTS}, ${JAVA} PAL ${test} > ${test}.ref 2>&1;)
+	-@$(foreach test, ${SIMPLETESTS}, ${JAVA} -jar PAL.jar ${test} > ${test}.ref 2>&1;)
 	@${ECHO} "Done."
 
 # Build the .ref files for each of the INPUTTESTS
 	@${ECHO} -n "Creating .ref files for interactive tests..."
-	-@$(foreach test, ${INPUTTESTS}, ${JAVA} PAL ${test} < ${test}.in > ${test}.ref 2>&1;)
+	-@$(foreach test, ${INPUTTESTS}, ${JAVA} -jar PAL.jar ${test} < ${test}.in > ${test}.ref 2>&1;)
 	@${ECHO} "Done."
 	@${ECHO} "*** Remember to commit the new *.ref files to CVS. ***"
