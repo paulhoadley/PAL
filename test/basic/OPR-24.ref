@@ -1,6 +1,6 @@
 
 Runtime Error:
-test/OPR-24:3:JIF - top of stack not a boolean.
+test/basic/OPR-24:3:JIF - top of stack not a boolean.
 JIF 0 42
 
 Stack dump:

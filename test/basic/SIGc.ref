@@ -1,6 +1,6 @@
 
 Runtime Error:
-test/SIGc:2:A Program Abort signal was raised.
+test/basic/SIGc:2:A Program Abort signal was raised.
 SIG 0 1
 
 Stack dump:

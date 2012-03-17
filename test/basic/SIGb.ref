@@ -1,6 +1,6 @@
 
 Runtime Error:
-test/SIGb:2:Exception #0 never handled!
+test/basic/SIGb:2:Exception #0 never handled!
 SIG 0 0
 
 Stack dump:
