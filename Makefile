@@ -25,9 +25,6 @@ SIMPLETESTS=	$(filter-out %.out %.ref, $(wildcard test/basic/*))
 INPUTTESTS=	$(filter-out %.in %.out %.ref, $(wildcard test/interactive/*))
 
 
-TARBALL=	PAL.tar
-TARBALLFILES=	${SRC} $(filter-out %.out test/CVS test/interactive, $(wildcard test/*)) $(filter-out %.out test/interactive/CVS, $(wildcard test/interactive/*)) Makefile COPYRIGHT PAL.pdf
-
 CLASSFILES:=	$(patsubst %.java, %.class, $(shell cd src; find . -name '*.java'))
 JAVA_SOURCE=	$(shell find src -name '*.java')
 
@@ -48,8 +45,6 @@ PAL.pdf:	PAL.tex stackframe.tex
 
 .PHONY: clean
 clean:
-	rm -f *~
-	rm -f *.class
 	rm -rf bin
 	rm -rf ${DOCDIR}
 	rm -f test/basic/*.out
@@ -70,10 +65,6 @@ jar:	compile
 	echo "Main-class: net/logicsquad/pal/PAL" > jar-manifest
 	${JAR} cmf jar-manifest ${JARFILE} -C bin net
 	rm jar-manifest
-
-.PHONY: tarball
-tarball:	PAL.pdf
-	tar -cvf ${TARBALL} ${TARBALLFILES}
 
 .PHONY: test
 test:	jar
