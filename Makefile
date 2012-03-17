@@ -1,28 +1,20 @@
 # Makefile for PAL Machine Simulator
 
-JAVAC=		javac
-JAVA=		java
-JAVADOC=	javadoc
 DOCDIR=		html
 JAVADOCOPTS=	-version -author -windowtitle "PAL Machine Simulator" \
 		-d ${DOCDIR} -private -sourcepath src
-JAR=		jar
+
 JARFILE=	PAL.jar
 JAROPTS=	-cm -C src -f
-
-ECHO=		echo
 
 PS2PDF=		ps2pdf
 DVIPS=		dvips
 LATEX=		latex
 GPIC=		pic
 
-SRC=		$(wildcard *.java)
 SIMPLETESTS=	$(filter-out %.out %.ref, $(wildcard test/basic/*))
 INPUTTESTS=	$(filter-out %.in %.out %.ref, $(wildcard test/interactive/*))
 
-
-CLASSFILES:=	$(patsubst %.java, %.class, $(shell cd src; find . -name '*.java'))
 JAVA_SOURCE=	$(shell find src -name '*.java')
 
 .PHONY:	compile
@@ -55,42 +47,41 @@ clean:
 .PHONY: docs
 docs:
 	mkdir -p ${DOCDIR}
-	${JAVADOC} ${JAVADOCOPTS} net.logicsquad.pal
+	javadoc ${JAVADOCOPTS} net.logicsquad.pal
 
 .PHONY: jar
 jar:	compile
 	echo "Main-class: net/logicsquad/pal/PAL" > jar-manifest
-	${JAR} cmf jar-manifest ${JARFILE} -C bin net
+	jar cmf jar-manifest ${JARFILE} -C bin net
 	rm jar-manifest
 
 .PHONY: test
 test:	jar
 	@rm -f test/basic/*.out
 	@rm -f test/interactive/*.out
-	-@$(foreach test, ${SIMPLETESTS}, ${ECHO} "Testing ${test}"; \
-			${JAVA} -jar PAL.jar ${test} > ${test}.out 2>&1; \
+	-@$(foreach test, ${SIMPLETESTS}, echo "Testing ${test}"; \
+			java -jar PAL.jar ${test} > ${test}.out 2>&1; \
 			diff ${test}.out ${test}.ref; )
 
-	-@$(foreach test, ${INPUTTESTS}, ${ECHO} "Testing ${test}"; \
-			${JAVA} -jar PAL.jar ${test} < ${test}.in > ${test}.out 2>&1; \
+	-@$(foreach test, ${INPUTTESTS}, echo "Testing ${test}"; \
+			java -jar PAL.jar ${test} < ${test}.in > ${test}.out 2>&1; \
 			diff ${test}.out ${test}.ref; )
-	@${ECHO} "Testing complete."
+	@echo "Testing complete."
 
 # Re-make the reference for the test files.
 .PHONY: test-ref
 test-ref:
-	@${ECHO} -n "Removing old .ref files..."
+	@echo -n "Removing old .ref files..."
 	@rm -f test/basic/*.ref
 	@rm -f test/interactive/*.ref
-	@${ECHO} "Done."
+	@echo "Done."
 
 # Build the .ref files for each of the SIMPLETESTS
-	@${ECHO} -n "Creating .ref files for simple tests..."
-	-@$(foreach test, ${SIMPLETESTS}, ${JAVA} -jar PAL.jar ${test} > ${test}.ref 2>&1;)
-	@${ECHO} "Done."
+	@echo -n "Creating .ref files for simple tests..."
+	-@$(foreach test, ${SIMPLETESTS}, java -jar PAL.jar ${test} > ${test}.ref 2>&1;)
+	@echo "Done."
 
 # Build the .ref files for each of the INPUTTESTS
-	@${ECHO} -n "Creating .ref files for interactive tests..."
-	-@$(foreach test, ${INPUTTESTS}, ${JAVA} -jar PAL.jar ${test} < ${test}.in > ${test}.ref 2>&1;)
-	@${ECHO} "Done."
-	@${ECHO} "*** Remember to commit the new *.ref files to CVS. ***"
+	@echo -n "Creating .ref files for interactive tests..."
+	-@$(foreach test, ${INPUTTESTS}, java -jar PAL.jar ${test} < ${test}.in > ${test}.ref 2>&1;)
+	@echo "Done."
