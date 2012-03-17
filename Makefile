@@ -1,8 +1,5 @@
 # Makefile for PAL Machine Simulator
 
-# PAL Machine Simulator: An implementation in Java
-#
-
 JAVAC=		javac
 JAVA=		java
 JAVADOC=	javadoc
