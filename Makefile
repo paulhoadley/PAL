@@ -5,6 +5,7 @@
 # * docs: Builds Javadoc API documentation
 # * tests: Runs tests
 # * clean: Cleans up
+# * manual: Builds a PDF manual in the doc subdirectory (requires LaTeX)
 
 # Javadocs
 DOCDIR=		html
@@ -14,12 +15,6 @@ JAVADOCOPTS=	-version -author -windowtitle "PAL Machine Simulator" \
 # JAR
 JARFILE=	PAL.jar
 JAROPTS=	-cm -C src -f
-
-# Manual
-PS2PDF=		ps2pdf
-DVIPS=		dvips
-LATEX=		latex
-GPIC=		pic
 
 # Tests
 SIMPLETESTS=	$(filter-out %.out %.ref, $(wildcard test/basic/*))
@@ -31,16 +26,6 @@ compile:
 	mkdir -p bin
 	javac -d bin ${JAVA_SOURCE}
 
-stackframe.tex:	stackframe.pic
-	${GPIC} -t stackframe.pic > stackframe.tex
-
-PAL.pdf:	PAL.tex stackframe.tex
-	${LATEX} PAL.tex
-	${LATEX} PAL.tex
-	${LATEX} PAL.tex
-	${DVIPS} PAL.dvi -Ppdf -o PAL.ps
-	${PS2PDF} PAL.ps
-
 .PHONY: clean
 clean:
 	rm -rf bin
@@ -50,13 +35,16 @@ clean:
 	rm -f ${JARFILE}
 	rm -f jar-manifest
 	rm -f ${TARBALL}
-	rm -f PAL.aux PAL.dvi PAL.lof PAL.log PAL.lot PAL.pdf PAL.ps PAL.toc
-	rm -f stackframe.tex
+	make -C doc clean
 
 .PHONY: docs
 docs:
 	mkdir -p ${DOCDIR}
 	javadoc ${JAVADOCOPTS} net.logicsquad.pal
+
+.PHONY:	manual
+manual:
+	make -C doc PAL.pdf
 
 .PHONY: jar
 jar:	compile
