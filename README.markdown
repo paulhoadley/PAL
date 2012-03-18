@@ -1,6 +1,13 @@
 The PAL Abstract Machine—An implementation in Java
 ==================================================
 
+What is this?
+-------------
+
+It's an implementation of a toy machine with a small instruction set,
+conveniently packaged as a Java JAR.  You might use it as the target of
+a toy compiler project from a higher-level language.
+
 History
 -------
 
@@ -17,13 +24,5 @@ back to the Department.
 Project Status
 --------------
 
-The initial import to GitHub (marked by tag 'v0.1', but with prior
-history preserved right back to an old CVS repository) represents the
-code pulled from mothballs after 8 or 9 years.  There were no changes
-made during this period.  Quite probably no one used the code during
-this period.  It probably doesn't build (there are some hard-coded paths
-in the `Makefile` that were no doubt meaningful on some long-dead
-UltraSPARC workhorse).
-
-It would be nice to get the code building at least.  So if Java
-simulations of Harvard architecture machines are your thing, stay tuned.
+The code builds again (certainly on Mac OS X, and probably any flavour
+of Unix), and the tests all pass.  There are no _known_ bugs.
