@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class DataStack {
 	/** A container for the <code>Data</code> objects. */
-	private List data;
+	private List<Data> data;
 
 	/** The address of the current frame's base. */
 	private int frameBase;
@@ -38,7 +38,7 @@ public class DataStack {
 	public DataStack(int max) {
 		top = 0;
 
-		data = new ArrayList();
+		data = new ArrayList<Data>();
 
 		// Set up mark stack part for main program activation record.
 		markStack(0, 0);
@@ -75,7 +75,7 @@ public class DataStack {
 	 * @return The <code>Data</code> object removed from the top of the stack.
 	 */
 	public Data pop() {
-		return (Data) data.remove(--top);
+		return data.remove(--top);
 	}
 
 	/**
@@ -84,7 +84,7 @@ public class DataStack {
 	 * @return The <code>Data</code> object remaining on the top of the stack.
 	 */
 	public Data peek() {
-		return (Data) data.get(top - 1);
+		return data.get(top - 1);
 	}
 
 	/**
@@ -102,7 +102,7 @@ public class DataStack {
 			throw new IndexOutOfBoundsException("PAL address out of bounds.");
 		}
 
-		return (Data) data.get(address);
+		return data.get(address);
 	}
 
 	/**
