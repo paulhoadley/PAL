@@ -27,7 +27,7 @@ public class PAL {
 	private final int DATASIZE = 500;
 
 	/** Memory for the instructions. */
-	private ArrayList codeMem;
+	private ArrayList<Code> codeMem;
 
 	/** Stack for data. */
 	private DataStack dataStack;
@@ -92,7 +92,7 @@ public class PAL {
 	 */
 	public PAL() {
 		// Create the code memory.
-		codeMem = new ArrayList(CODESIZE);
+		codeMem = new ArrayList<Code>(CODESIZE);
 		dataStack = new DataStack(DATASIZE);
 
 		try {
@@ -183,7 +183,7 @@ public class PAL {
 		Code currInst;
 
 		while (pc < codeMem.size()) {
-			currInst = (Code) codeMem.get(pc);
+			currInst = codeMem.get(pc);
 
 			// Bump the program counter.
 			pc++;
