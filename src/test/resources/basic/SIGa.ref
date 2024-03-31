@@ -1,6 +1,6 @@
 
 Runtime Error:
-test/basic/SIGa:1:Exception #0 never handled!
+CODE:1:Exception #0 never handled!
 SIG 0 0
 
 Stack dump:
