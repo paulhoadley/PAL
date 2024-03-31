@@ -29,17 +29,17 @@ public class PALTest {
 	"OPR-14",
 	"OPR-15",
 	"OPR-2",
-//	"OPR-24");
-//	"OPR-29-30");
+	"OPR-24",
+	"OPR-29-30",
 	"OPR-3-4-5-6",
-//	"OPR-6a");
-//	"OPR-6b");
-//	"OPR-7");
+	"OPR-6a",
+	"OPR-6b",
+	"OPR-7",
 	"OPR-8",
 	"OPR-8-27-28",
-//	"SIGa",
-//	"SIGb",
-//	"SIGc",
+	"SIGa",
+	"SIGb",
+	"SIGc",
 	"SIGd",
 	"STRINGPARSE");
 
