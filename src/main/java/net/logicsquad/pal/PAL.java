@@ -1,9 +1,11 @@
 package net.logicsquad.pal;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PushbackReader;
 import java.util.ArrayList;
@@ -67,10 +69,10 @@ public class PAL {
 		}
 
 		// Make a machine and load the code.
-		PAL machine = new PAL();
 
 		// Execute.
 		try {
+			PAL machine = new PAL(new FileInputStream(filename));
 			machine.execute();
 		} catch (OutOfMemoryError e) {
 			System.err.println(e.getMessage());
@@ -78,6 +80,9 @@ public class PAL {
 		} catch (IndexOutOfBoundsException e) {
 			System.err.println(e.getMessage());
 			System.exit(1);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 		return;
@@ -90,13 +95,13 @@ public class PAL {
 	 * lexical analysis of the source file is quite rigid. Any deviation from
 	 * the prescribed format for source files causes the machine to stop.
 	 */
-	public PAL() {
+	PAL(InputStream is) {
 		// Create the code memory.
 		codeMem = new ArrayList<Code>(CODESIZE);
 		dataStack = new DataStack(DATASIZE);
 
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(filename));
+			BufferedReader br = new BufferedReader(new InputStreamReader(is));
 			int lineno = 1;
 			String line = br.readLine();
 			String mnemonic = "";
@@ -176,7 +181,7 @@ public class PAL {
 	 * href="http://www.cs.adelaide.edu.au/users/third/cc/handouts/pal.pdf">The
 	 * PAL Machine</a>.
 	 */
-	private void execute() {
+	void execute() {
 		// Initialise program counter.
 		pc = 0;
 
@@ -265,7 +270,8 @@ public class PAL {
 
 				if (destination == 0) {
 					// "JMP 0 0" signifies program termination.
-					die(0);
+//					die(0);
+					return;
 				}
 
 				if (destination < 1 || destination > codeMem.size()) {
@@ -529,7 +535,8 @@ public class PAL {
 
 		System.err.println("Program failed to execute a termination"
 				+ " instruction (JMP 0 0).");
-		die(1);
+//		die(1);
+		return;
 	}
 
 	/**
@@ -1178,6 +1185,7 @@ public class PAL {
 	 */
 	private void die(int err) {
 		System.exit(err);
+		return;
 	}
 
 	/**
