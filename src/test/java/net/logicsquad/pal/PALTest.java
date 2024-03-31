@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
  * @author paulh
  */
 public class PALTest {
-	private static final List<String> INPUTS = List.of(
+	private static final List<String> NON_INTERACTIVE_INPUTS = List.of(
 	"BASICS",
 	"BOOLS",
 	"INC",
@@ -43,9 +43,21 @@ public class PALTest {
 	"SIGd",
 	"STRINGPARSE");
 
+	private static final List<String> INTERACTIVE_INPUTS = List.of(
+	"FACTITER",
+	"FACTREC",
+	"LAB",
+	"OPR-19",
+	"OPR-22",
+	"OPR-23",
+	"SIGe",
+	"SIGf",
+	"SIGg",
+	"SIGh");
+	
 	@Test
 	public void nonInteractiveTests() throws IOException {
-		for (String input : INPUTS) {
+		for (String input : NON_INTERACTIVE_INPUTS) {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			System.setOut(new PrintStream(baos));
 			System.setErr(new PrintStream(baos));
@@ -55,6 +67,25 @@ public class PALTest {
 			baos.flush();
 			String output = new String(baos.toByteArray());
 			String expected = new String(PALTest.class.getResourceAsStream("/basic/" + input + ".ref").readAllBytes(), StandardCharsets.UTF_8);
+			assertEquals(expected, output);
+		}
+		return;
+	}
+
+	@Test
+	public void interactiveTests() throws IOException {
+		for (String input : INTERACTIVE_INPUTS) {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			System.setOut(new PrintStream(baos));
+			System.setErr(new PrintStream(baos));
+			InputStream response = PALTest.class.getResourceAsStream("/interactive/" + input + ".in");
+			System.setIn(response);
+			InputStream is = PALTest.class.getResourceAsStream("/interactive/" + input);
+			PAL pal = new PAL(is);
+			pal.execute();
+			baos.flush();
+			String output = new String(baos.toByteArray());
+			String expected = new String(PALTest.class.getResourceAsStream("/interactive/" + input + ".ref").readAllBytes(), StandardCharsets.UTF_8);
 			assertEquals(expected, output);
 		}
 		return;
