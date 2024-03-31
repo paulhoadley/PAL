@@ -6,7 +6,7 @@ pTwo exh: exception 8.
 Main exh: exception 8.
 
 Runtime Error:
-test/interactive/SIGg:167:Exception #8 never handled!
+CODE:167:Exception #8 never handled!
 SIG 0 0
 
 Stack dump:

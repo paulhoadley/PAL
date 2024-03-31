@@ -1,3 +1,6 @@
+![](https://github.com/paulhoadley/pal/workflows/build/badge.svg)
+[![License](https://img.shields.io/badge/License-BSD-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
 The PAL Abstract Machine—An implementation in Java
 ==================================================
 

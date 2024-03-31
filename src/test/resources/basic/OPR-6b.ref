@@ -1,6 +1,6 @@
 
 Runtime Error:
-test/basic/OPR-6b:5:Attempt to divide by zero.
+CODE:5:Attempt to divide by zero.
 OPR 0 6
 
 Stack dump:

@@ -1,0 +1,12 @@
+
+Runtime Error:
+CODE:4:OPR 20 can only print values of type integer, real or string.
+OPR 0 20
+
+Stack dump:
+----------
+true
+0
+0
+0
+0

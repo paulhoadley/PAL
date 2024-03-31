@@ -1,7 +1,7 @@
 Enter the exception type.
 
 Runtime Error:
-test/interactive/SIGf:18:A Program Abort signal was raised.
+CODE:18:A Program Abort signal was raised.
 SIG 0 1
 
 Stack dump:
