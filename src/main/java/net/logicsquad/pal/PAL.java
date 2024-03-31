@@ -54,6 +54,18 @@ public class PAL {
 	private static final int typeMismatch = 3;
 	private static final int reachedEOF = 4;
 
+	private enum ExitStatus {
+		NORMAL(0),
+		ABNORMAL(1);
+
+		private final int exitCode;
+
+		private ExitStatus(int exitCode) {
+			this.exitCode = exitCode;
+			return;
+		}
+	}
+
 	/**
 	 * Main method for command line operation.
 	 * 
@@ -71,9 +83,10 @@ public class PAL {
 		// Make a machine and load the code.
 
 		// Execute.
+		ExitStatus status = null;
 		try {
 			PAL machine = new PAL(new FileInputStream(filename));
-			machine.execute();
+			status = machine.execute();
 		} catch (OutOfMemoryError e) {
 			System.err.println(e.getMessage());
 			System.exit(1);
@@ -84,7 +97,9 @@ public class PAL {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		if (status == null || status == ExitStatus.ABNORMAL) {
+			System.exit(ExitStatus.ABNORMAL.exitCode);
+		}
 		return;
 	}
 
@@ -113,7 +128,7 @@ public class PAL {
 				if (lineno > CODESIZE) {
 					System.err.println("Exceeded code storage limit at line "
 							+ lineno);
-					die(1);
+					System.exit(ExitStatus.ABNORMAL.exitCode);
 				}
 				st = new StringTokenizer(line);
 
@@ -140,16 +155,16 @@ public class PAL {
 						if (second instanceof String) {
 							System.err.println("Unrecognised second operand"
 									+ " on line " + lineno);
-							die(1);
+							System.exit(ExitStatus.ABNORMAL.exitCode);
 						}
 					}
 				} catch (NoSuchElementException e) {
 					System.err.println("Not enough tokens on line " + lineno);
-					die(1);
+					System.exit(ExitStatus.ABNORMAL.exitCode);
 				} catch (NumberFormatException e) {
 					System.err.println("First operand non-integer on line "
 							+ lineno);
-					die(1);
+					System.exit(ExitStatus.ABNORMAL.exitCode);
 				}
 				codeMem.add(new Code(mnemonic, first, second, lineno));
 				line = br.readLine();
@@ -181,7 +196,7 @@ public class PAL {
 	 * href="http://www.cs.adelaide.edu.au/users/third/cc/handouts/pal.pdf">The
 	 * PAL Machine</a>.
 	 */
-	void execute() {
+	ExitStatus execute() {
 		// Initialise program counter.
 		pc = 0;
 
@@ -222,7 +237,7 @@ public class PAL {
 
 				if (!(o instanceof Integer)) {
 					error(currInst, "Argument to INC must be an integer.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				} else {
 					dataStack.incTop(((Integer) o).intValue());
 				}
@@ -232,7 +247,7 @@ public class PAL {
 
 				if (!(o instanceof Integer)) {
 					error(currInst, "Argument to JIF must be an integer.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				}
 
 				tos = dataStack.pop();
@@ -240,7 +255,7 @@ public class PAL {
 				if (tos.getType() != Data.BOOL) {
 					dataStack.push(tos);
 					error(currInst, "JIF - top of stack not a boolean.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				}
 
 				if (!((Boolean) tos.getValue()).booleanValue()) {
@@ -249,7 +264,7 @@ public class PAL {
 					if (destination < 1 || destination > codeMem.size()) {
 						dataStack.push(tos);
 						error(currInst, "JIF - attempt to jump outside code.");
-						die(1);
+						return ExitStatus.ABNORMAL;
 					}
 
 					// Our code store uses zero-based indexing. For
@@ -263,20 +278,19 @@ public class PAL {
 
 				if (!(o instanceof Integer)) {
 					error(currInst, "Argument to JMP must be an integer.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				}
 
 				int destination = ((Integer) o).intValue();
 
 				if (destination == 0) {
 					// "JMP 0 0" signifies program termination.
-//					die(0);
-					return;
+					return ExitStatus.ABNORMAL;
 				}
 
 				if (destination < 1 || destination > codeMem.size()) {
 					error(currInst, "JMP - attempt to jump outside code.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				}
 
 				// Our code store uses zero-based indexing. For
@@ -289,7 +303,7 @@ public class PAL {
 
 				if (!(o instanceof Integer)) {
 					error(currInst, "Argument to LCI must be an integer.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				} else {
 					dataStack.push(new Data(Data.INT, o));
 				}
@@ -303,7 +317,7 @@ public class PAL {
 
 				if (!(o instanceof Float)) {
 					error(currInst, "Argument to LCR must be a real.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				} else {
 					dataStack.push(new Data(Data.REAL, o));
 				}
@@ -313,13 +327,13 @@ public class PAL {
 
 				if (!(o instanceof String)) {
 					error(currInst, "Argument to LCS must be a string.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				} else {
 					if (!(((String) o).startsWith("'") && (((String) o)
 							.endsWith("'")))) {
 						error(currInst,
 								"String must be delimited by single-quotes.");
-						die(1);
+						return ExitStatus.ABNORMAL;
 					} else {
 						String oS = (String) o;
 						oS = oS.substring(1, oS.length() - 1);
@@ -333,7 +347,7 @@ public class PAL {
 
 				if (!(o instanceof Integer)) {
 					error(currInst, "Argument to LDA must be an integer.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				}
 
 				int address = dataStack.getAddress(currInst.getFirst(),
@@ -350,7 +364,7 @@ public class PAL {
 				if (tos.getType() != Data.INT) {
 					dataStack.push(tos);
 					error(currInst, "LDI - top of stack must be an integer.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				}
 
 				address = ((Integer) tos.getValue()).intValue();
@@ -366,7 +380,7 @@ public class PAL {
 
 				if (!(o instanceof Integer)) {
 					error(currInst, "Argument to LDV must be an integer");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				}
 
 				loadedVal = dataStack.get(currInst.getFirst(),
@@ -393,7 +407,10 @@ public class PAL {
 
 				break;
 			case Mnemonic.OPR:
-				doOperation(currInst);
+				ExitStatus status = doOperation(currInst);
+				if (status == ExitStatus.ABNORMAL) {
+					return ExitStatus.ABNORMAL;
+				}
 				break;
 			case Mnemonic.RDI:
 				// Read an integer from stdin.
@@ -404,7 +421,10 @@ public class PAL {
 					if (intLine == null) {
 						// EOF reached.
 						currentException = reachedEOF;
-						raiseException(currInst);
+						ExitStatus exceptionStatus = raiseException(currInst);
+						if (exceptionStatus == ExitStatus.ABNORMAL) {
+							return ExitStatus.ABNORMAL;
+						}
 						break;
 					}
 					int intVal = Integer.parseInt(intLine);
@@ -417,7 +437,10 @@ public class PAL {
 					System.err.println(e1);
 				} catch (NumberFormatException e2) {
 					currentException = typeMismatch;
-					raiseException(currInst);
+					ExitStatus exceptionStatus = raiseException(currInst);
+					if (exceptionStatus == ExitStatus.ABNORMAL) {
+						return ExitStatus.ABNORMAL;
+					}
 				}
 				break;
 			case Mnemonic.RDR:
@@ -429,7 +452,10 @@ public class PAL {
 					if (realLine == null) {
 						// EOF reached.
 						currentException = reachedEOF;
-						raiseException(currInst);
+						ExitStatus exceptionStatus = raiseException(currInst);
+						if (exceptionStatus == ExitStatus.ABNORMAL) {
+							return ExitStatus.ABNORMAL;
+						}
 						break;
 					}
 					float realVal = Float.parseFloat(realLine);
@@ -442,7 +468,10 @@ public class PAL {
 					System.err.println(e1);
 				} catch (NumberFormatException e2) {
 					currentException = typeMismatch;
-					raiseException(currInst);
+					ExitStatus exceptionStatus = raiseException(currInst);
+					if (exceptionStatus == ExitStatus.ABNORMAL) {
+						return ExitStatus.ABNORMAL;
+					}
 				}
 				break;
 			case Mnemonic.REH:
@@ -451,7 +480,7 @@ public class PAL {
 
 				if (!(o instanceof Integer)) {
 					error(currInst, "Argument to REH must be an integer.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				}
 
 				// Get the location of the exception handler pointer
@@ -469,7 +498,7 @@ public class PAL {
 
 				if (!(o instanceof Integer)) {
 					error(currInst, "Argument to SIG must be an integer.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				}
 
 				int excType = ((Integer) o).intValue();
@@ -487,7 +516,10 @@ public class PAL {
 				}
 
 				// Raise the exception...
-				raiseException(currInst);
+				ExitStatus exceptionStatus = raiseException(currInst);
+				if (exceptionStatus == ExitStatus.ABNORMAL) {
+					return ExitStatus.ABNORMAL;
+				}
 
 				break;
 			case Mnemonic.STI:
@@ -499,7 +531,7 @@ public class PAL {
 				if (tos.getType() != Data.INT) {
 					dataStack.push(tos);
 					error(currInst, "STI - top of stack must be an integer.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				}
 
 				ntos = dataStack.pop();
@@ -516,7 +548,7 @@ public class PAL {
 
 				if (!(o instanceof Integer)) {
 					error(currInst, "Argument to STO must be an integer.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				}
 
 				tos = dataStack.pop();
@@ -535,8 +567,7 @@ public class PAL {
 
 		System.err.println("Program failed to execute a termination"
 				+ " instruction (JMP 0 0).");
-//		die(1);
-		return;
+		return ExitStatus.ABNORMAL;
 	}
 
 	/**
@@ -550,17 +581,17 @@ public class PAL {
 	 *            reaches here, that object contains an <code>OPR</code>
 	 *            mnemonic.
 	 */
-	public void doOperation(Code currInst) {
+	public ExitStatus doOperation(Code currInst) {
 		Object o = currInst.getSecond();
 		int opr;
 		if (!(o instanceof Integer)) {
 			error(currInst, "Argument to OPR must be an integer.");
-			die(1);
+			return ExitStatus.ABNORMAL;
 		}
 		opr = ((Integer) o).intValue();
 		if (opr < 0 || opr > 31) {
 			error(currInst, "Argument to OPR must be in range 0-31.");
-			die(1);
+			return ExitStatus.ABNORMAL;
 		}
 
 		Data returnPoint, tos, ntos, dynamicLink;
@@ -627,7 +658,7 @@ public class PAL {
 				tos.setValue(new Float(-oldValue));
 			} else {
 				error(currInst, "Cannot negate boolean, string or UNDEF value.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			}
 			break;
 		case 3:
@@ -645,7 +676,7 @@ public class PAL {
 				dataStack.push(tos);
 				error(currInst, "Values for arithmetic operations must be"
 						+ " of same type.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			} else {
 				int type = tos.getType();
 				if (type != Data.INT && type != Data.REAL) {
@@ -653,7 +684,7 @@ public class PAL {
 					dataStack.push(tos);
 					error(currInst, "Values for arithmetic operations must be"
 							+ " of type integer or real.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				}
 				if (type == Data.INT) {
 					int int1 = ((Integer) ntos.getValue()).intValue();
@@ -676,7 +707,7 @@ public class PAL {
 							dataStack.push(ntos);
 							dataStack.push(tos);
 							error(currInst, "Attempt to divide by zero.");
-							die(1);
+							return ExitStatus.ABNORMAL;
 						}
 
 						dataStack.push(new Data(Data.INT, new Integer(int1
@@ -705,7 +736,7 @@ public class PAL {
 							dataStack.push(ntos);
 							dataStack.push(tos);
 							error(currInst, "Attempt to divide by zero.");
-							die(1);
+							return ExitStatus.ABNORMAL;
 						}
 
 						dataStack.push(new Data(Data.REAL, new Float(flt1
@@ -722,7 +753,7 @@ public class PAL {
 
 			if (dataStack.peek().getType() != Data.INT) {
 				error(currInst, "Exponent must be of type integer.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			}
 			tos = dataStack.pop();
 			int exponent = ((Integer) tos.getValue()).intValue();
@@ -730,7 +761,7 @@ public class PAL {
 			int baseType = dataStack.peek().getType();
 			if (baseType != Data.INT && baseType != Data.REAL) {
 				error(currInst, "Base must be of type integer or real.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			}
 			ntos = dataStack.pop();
 			if (baseType == Data.INT) {
@@ -753,7 +784,7 @@ public class PAL {
 				dataStack.push(tos);
 				error(currInst,
 						"Both arguments to OPR 8 must be of type string.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			}
 			String sResult = (String) ntos.getValue();
 			sResult += (String) tos.getValue();
@@ -764,7 +795,7 @@ public class PAL {
 
 			if (dataStack.peek().getType() != Data.INT) {
 				error(currInst, "Argument to OPR 9 must be of type integer.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			} else {
 				tos = dataStack.pop();
 				// NB the % operator will give a negative for a
@@ -793,7 +824,7 @@ public class PAL {
 				dataStack.push(tos);
 				error(currInst, "Values for arithmetic operations must be"
 						+ " of same type.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			} else {
 				int type = tos.getType();
 				if (type != Data.INT && type != Data.REAL) {
@@ -801,7 +832,7 @@ public class PAL {
 					dataStack.push(tos);
 					error(currInst, "Values for arithmetic operations must be"
 							+ " of type integer or real.");
-					die(1);
+					return ExitStatus.ABNORMAL;
 				}
 				if (type == Data.INT) {
 					int int1 = ((Integer) ntos.getValue()).intValue();
@@ -874,7 +905,7 @@ public class PAL {
 			if (tos.getType() != Data.BOOL) {
 				dataStack.push(tos);
 				error(currInst, "Top of stack must be a boolean.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			}
 
 			boolean bResult = !((Boolean) tos.getValue()).booleanValue();
@@ -912,7 +943,7 @@ public class PAL {
 					|| dataStack.peek().getType() == Data.UNDEF) {
 				error(currInst, "OPR 20 can only print values"
 						+ " of type integer, real or string.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			} else {
 				tos = dataStack.pop();
 				System.out.print(tos);
@@ -948,7 +979,7 @@ public class PAL {
 			if (dataStack.peek().getType() != Data.INT) {
 				error(currInst, "Integer to real conversion can only be"
 						+ " performed on a value of type integer.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			}
 			float fAns = ((Integer) dataStack.pop().getValue()).floatValue();
 			dataStack.push(new Data(Data.REAL, new Float(fAns)));
@@ -959,7 +990,7 @@ public class PAL {
 			if (dataStack.peek().getType() != Data.REAL) {
 				error(currInst, "Real to integer conversion can only be"
 						+ " performed on a value of type real.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			}
 			int iResult = ((Float) dataStack.pop().getValue()).intValue();
 			dataStack.push(new Data(Data.INT, new Integer(iResult)));
@@ -970,7 +1001,7 @@ public class PAL {
 			if (dataStack.peek().getType() != Data.INT) {
 				error(currInst, "Integer to string conversion can only be"
 						+ " performed on a value of type integer.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			}
 			dataStack.push(new Data(Data.STRING, dataStack.pop().getValue()
 					.toString()));
@@ -981,7 +1012,7 @@ public class PAL {
 			if (dataStack.peek().getType() != Data.REAL) {
 				error(currInst, "Real to string conversion can only be"
 						+ " performed on value of type real.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			}
 			dataStack.push(new Data(Data.STRING, dataStack.pop().getValue()
 					.toString()));
@@ -996,7 +1027,7 @@ public class PAL {
 				dataStack.push(tos);
 				error(currInst, "Logical and can only be"
 						+ " performed on values of type boolean.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			}
 			boolean bool1 = ((Boolean) tos.getValue()).booleanValue();
 			boolean bool2 = ((Boolean) ntos.getValue()).booleanValue();
@@ -1012,7 +1043,7 @@ public class PAL {
 				dataStack.push(tos);
 				error(currInst, "Logical or can only be"
 						+ " performed on values of type boolean.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			}
 			bool1 = ((Boolean) tos.getValue()).booleanValue();
 			bool2 = ((Boolean) ntos.getValue()).booleanValue();
@@ -1027,7 +1058,7 @@ public class PAL {
 				dataStack.push(tos);
 				error(currInst, "OPR 0 31 expects an integer value"
 						+ "on top of the stack.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			}
 
 			int testValue = ((Integer) tos.getValue()).intValue();
@@ -1038,7 +1069,7 @@ public class PAL {
 		default:
 			System.out.println("OPR " + opr + ": not implemented.");
 		}
-		return;
+		return ExitStatus.NORMAL;
 	}
 
 	/**
@@ -1084,11 +1115,11 @@ public class PAL {
 	 *            The <code>Code</code> object which caused the exception. Used
 	 *            to add information to error messages.
 	 */
-	private void raiseException(Code currInst) {
+	private ExitStatus raiseException(Code currInst) {
 		// The Program Abort signal cannot be caught.
 		if (currentException == programAbort) {
 			error(currInst, "A Program Abort signal was raised.");
-			die(1);
+			return ExitStatus.ABNORMAL;
 		}
 
 		Data handlerLocation, dynamicLink;
@@ -1101,14 +1132,14 @@ public class PAL {
 
 			if (handlerLocation.getType() != Data.INT) {
 				error(currInst, "Exception handler address must be an integer.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			}
 
 			handlerAddress = ((Integer) handlerLocation.getValue()).intValue();
 
 			if (handlerAddress < 0 || handlerAddress > codeMem.size()) {
 				error(currInst, "Exception handler address out of code range.");
-				die(1);
+				return ExitStatus.ABNORMAL;
 			}
 
 			if (handlerAddress == 0) {
@@ -1150,8 +1181,9 @@ public class PAL {
 			// No handler was found.
 			error(currInst, "Exception #" + currentException
 					+ " never handled!");
-			die(1);
+			return ExitStatus.ABNORMAL;
 		}
+		return ExitStatus.NORMAL;
 	}
 
 	/**
@@ -1173,18 +1205,6 @@ public class PAL {
 		System.err.println("\nStack dump:");
 		System.err.println("----------");
 		System.err.print(dataStack);
-		return;
-	}
-
-	/**
-	 * Die due to an error.
-	 * 
-	 * @param err
-	 *            An arbitrary error code. This integer is returned to the
-	 *            operating system via the <code>System.exit</code> method.
-	 */
-	private void die(int err) {
-		System.exit(err);
 		return;
 	}
 
