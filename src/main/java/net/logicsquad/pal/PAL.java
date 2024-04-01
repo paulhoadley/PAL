@@ -212,7 +212,7 @@ public class PAL {
 
 			Data tos, ntos, returnPoint, loadedVal;
 
-			switch (Mnemonic.mnemonicToInt(currInst.getMnemonic())) {
+			switch (currInst.getMnemonic()) {
 			case Mnemonic.CAL:
 				// Procedure/function call.
 

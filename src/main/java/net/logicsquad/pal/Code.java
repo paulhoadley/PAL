@@ -12,7 +12,7 @@ public class Code {
 	 * 
 	 * @see Mnemonic
 	 */
-	private String mnemonic;
+	private Mnemonic mnemonic;
 
 	/** The first argument to the instruction. */
 	private int first;
@@ -45,7 +45,7 @@ public class Code {
 	 *            originated.
 	 */
 	public Code(String mnemonic, int first, Object second, int lineno) {
-		this.mnemonic = mnemonic;
+		this.mnemonic = Mnemonic.valueOf(mnemonic);
 		this.first = first;
 		this.second = second;
 		this.lineno = lineno;
@@ -58,7 +58,7 @@ public class Code {
 	 * @return A <code>String</code> containing the three letter mnemonic for
 	 *         this instruction.
 	 */
-	public String getMnemonic() {
+	public Mnemonic getMnemonic() {
 		return mnemonic;
 	}
 
