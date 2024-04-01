@@ -9,7 +9,7 @@ import java.util.List;
  * @author Philip Roberts &lt;philip.roberts@gmail.com&gt;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
-public class DataStack {
+final class DataStack {
 	/** A container for the <code>Data</code> objects. */
 	private List<Data> data;
 
@@ -25,7 +25,7 @@ public class DataStack {
 	/**
 	 * Default constructor. Assumes no limit on stack size.
 	 */
-	public DataStack() {
+	DataStack() {
 		this(0);
 	}
 
@@ -35,7 +35,7 @@ public class DataStack {
 	 * @param max
 	 *            Maximum stack size.
 	 */
-	public DataStack(int max) {
+	DataStack(int max) {
 		top = 0;
 
 		data = new ArrayList<Data>();

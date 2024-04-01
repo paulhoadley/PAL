@@ -6,7 +6,7 @@ package net.logicsquad.pal;
  * @author Philip Roberts &lt;philip.roberts@gmail.com&gt;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
-public class Data implements Cloneable {
+final class Data implements Cloneable {
 	/** The type of this datum. */
 	private int type;
 
@@ -37,7 +37,7 @@ public class Data implements Cloneable {
 	 *            An <code>Object</code> representing the value of this datum.
 	 * @see Code#Code
 	 */
-	public Data(int type, Object value) {
+	Data(int type, Object value) {
 		this.type = type;
 		this.value = value;
 		return;

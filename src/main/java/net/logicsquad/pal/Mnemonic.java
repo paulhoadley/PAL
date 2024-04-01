@@ -6,7 +6,7 @@ package net.logicsquad.pal;
  * @author Philip Roberts &lt;philip.roberts@gmail.com&gt;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
-public enum Mnemonic {
+enum Mnemonic {
 	/**
 	 * <code>CAL</code>
 	 */

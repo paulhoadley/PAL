@@ -6,7 +6,7 @@ package net.logicsquad.pal;
  * @author Philip Roberts &lt;philip.roberts@gmail.com&gt;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
-public class Code {
+final class Code {
 	/**
 	 * The three-letter mnemonic for this instruction.
 	 * 
@@ -44,7 +44,7 @@ public class Code {
 	 *            the line number in the source file where this instruction
 	 *            originated.
 	 */
-	public Code(String mnemonic, int first, Object second, int lineno) {
+	Code(String mnemonic, int first, Object second, int lineno) {
 		this.mnemonic = Mnemonic.valueOf(mnemonic);
 		this.first = first;
 		this.second = second;
