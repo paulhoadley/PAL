@@ -161,15 +161,15 @@ public class DataStack {
 	 */
 	public void markStack(int staticLink, int dynamicLink)
 			throws OutOfMemoryError {
-		push(new Data(Data.INT, new Integer(staticLink)));
-		push(new Data(Data.INT, new Integer(dynamicLink)));
+		push(new Data(Data.INT, Integer.valueOf(staticLink)));
+		push(new Data(Data.INT, Integer.valueOf(dynamicLink)));
 
 		// Leave space for return point.
-		push(new Data(Data.INT, new Integer(0)));
+		push(new Data(Data.INT, Integer.valueOf(0)));
 
 		// Dummy exception handler address - indicates that no handler
 		// is registered.
-		push(new Data(Data.INT, new Integer(0)));
+		push(new Data(Data.INT, Integer.valueOf(0)));
 	}
 
 	/**
