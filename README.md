@@ -1,4 +1,4 @@
-![](https://github.com/paulhoadley/pal/workflows/build/badge.svg)
+[![build](https://github.com/paulhoadley/PAL/actions/workflows/build.yml/badge.svg)](https://github.com/paulhoadley/PAL/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/License-BSD-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 The PAL Abstract Machine—An implementation in Java

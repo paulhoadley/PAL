@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.PushbackReader;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
@@ -40,6 +41,12 @@ public class PAL {
 	/** Input reader. */
 	private BufferedReader inputReader;
 
+	/** Stream for program output. */
+	private final PrintStream out;
+
+	/** Stream for diagnostics. */
+	private final PrintStream err;
+
 	/**
 	 * Wrapper to enable pushback of bytes into the input stream, for OPR 19.
 	 */
@@ -54,15 +61,24 @@ public class PAL {
 	private static final int typeMismatch = 3;
 	private static final int reachedEOF = 4;
 
-	private enum ExitStatus {
+	enum ExitStatus {
 		NORMAL(0),
 		ABNORMAL(1);
 
 		private final int exitCode;
 
-		private ExitStatus(int exitCode) {
+		ExitStatus(int exitCode) {
 			this.exitCode = exitCode;
 			return;
+		}
+
+		/**
+		 * Returns the process exit code corresponding to this status.
+		 *
+		 * @return the process exit code
+		 */
+		int exitCode() {
+			return exitCode;
 		}
 	}
 
@@ -74,8 +90,8 @@ public class PAL {
 	 */
 	public static void main(String[] args) {
 		if (args.length > 1) {
-			usage();
-			System.exit(ExitStatus.ABNORMAL.exitCode);
+			usage(System.out);
+			System.exit(ExitStatus.ABNORMAL.exitCode());
 		} else if (args.length == 1) {
 			filename = args[0];
 		}
@@ -94,7 +110,7 @@ public class PAL {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.exit(status.exitCode);
+		System.exit(status.exitCode());
 	}
 
 	/**
@@ -105,6 +121,29 @@ public class PAL {
 	 * the prescribed format for source files causes the machine to stop.
 	 */
 	PAL(InputStream is) {
+		this(is, System.in, System.out, System.err);
+	}
+
+	/**
+	 * Constructor. Behaves as {@link PAL#PAL(InputStream)}, but reads console
+	 * input from <code>in</code> and writes program output and diagnostics to
+	 * <code>out</code> and <code>err</code> respectively. This allows a machine
+	 * to be run without disturbing the system streams, which is what the tests
+	 * rely on.
+	 *
+	 * @param is
+	 *            the object file to load
+	 * @param in
+	 *            stream the running program reads from
+	 * @param out
+	 *            stream the running program writes to
+	 * @param err
+	 *            stream for load errors and runtime diagnostics
+	 */
+	PAL(InputStream is, InputStream in, PrintStream out, PrintStream err) {
+		this.out = out;
+		this.err = err;
+
 		// Create the code memory.
 		codeMem = new ArrayList<Code>(CODESIZE);
 		dataStack = new DataStack(DATASIZE);
@@ -120,9 +159,9 @@ public class PAL {
 
 			while (line != null) {
 				if (lineno > CODESIZE) {
-					System.err.println("Exceeded code storage limit at line "
+					err.println("Exceeded code storage limit at line "
 							+ lineno);
-					System.exit(ExitStatus.ABNORMAL.exitCode);
+					System.exit(ExitStatus.ABNORMAL.exitCode());
 				}
 				st = new StringTokenizer(line);
 
@@ -140,9 +179,9 @@ public class PAL {
 					String token = st.nextToken();
 					Optional<Mnemonic> parsed = Mnemonic.from(token);
 					if (parsed.isEmpty()) {
-						System.err.println("Unknown mnemonic '" + token
+						err.println("Unknown mnemonic '" + token
 								+ "' on line " + lineno);
-						System.exit(ExitStatus.ABNORMAL.exitCode);
+						System.exit(ExitStatus.ABNORMAL.exitCode());
 					}
 					mnemonic = parsed.get();
 					first = Integer.parseInt(st.nextToken());
@@ -154,18 +193,18 @@ public class PAL {
 					} else {
 						second = makeObject(s);
 						if (second instanceof String) {
-							System.err.println("Unrecognised second operand"
+							err.println("Unrecognised second operand"
 									+ " on line " + lineno);
-							System.exit(ExitStatus.ABNORMAL.exitCode);
+							System.exit(ExitStatus.ABNORMAL.exitCode());
 						}
 					}
 				} catch (NoSuchElementException e) {
-					System.err.println("Not enough tokens on line " + lineno);
-					System.exit(ExitStatus.ABNORMAL.exitCode);
+					err.println("Not enough tokens on line " + lineno);
+					System.exit(ExitStatus.ABNORMAL.exitCode());
 				} catch (NumberFormatException e) {
-					System.err.println("First operand non-integer on line "
+					err.println("First operand non-integer on line "
 							+ lineno);
-					System.exit(ExitStatus.ABNORMAL.exitCode);
+					System.exit(ExitStatus.ABNORMAL.exitCode());
 				}
 				codeMem.add(new Code(mnemonic, first, second, lineno));
 				line = br.readLine();
@@ -173,17 +212,17 @@ public class PAL {
 			}
 
 			// Set up the input reader.
-			pushBack = new PushbackReader(new InputStreamReader(System.in));
+			pushBack = new PushbackReader(new InputStreamReader(in));
 			// Note: the internal buffer of the BufferedReader is set
 			// to 1 (the smallest possible) so that it won't buffer up
 			// to EOF, thereby confusing OPR 19.
 			inputReader = new BufferedReader(pushBack, 1);
 		} catch (FileNotFoundException e) {
-			usage();
-			System.exit(ExitStatus.ABNORMAL.exitCode);
+			usage(err);
+			System.exit(ExitStatus.ABNORMAL.exitCode());
 		} catch (IOException e) {
-			System.err.println(e);
-			System.exit(ExitStatus.ABNORMAL.exitCode);
+			err.println(e);
+			System.exit(ExitStatus.ABNORMAL.exitCode());
 		}
 
 		currentException = 0;
@@ -435,7 +474,7 @@ public class PAL {
 					loadedVal.setType(Data.INT);
 					loadedVal.setValue(Integer.valueOf(intVal));
 				} catch (IOException e1) {
-					System.err.println(e1);
+					err.println(e1);
 				} catch (NumberFormatException e2) {
 					currentException = typeMismatch;
 					ExitStatus exceptionStatus = raiseException(currInst);
@@ -466,7 +505,7 @@ public class PAL {
 					loadedVal.setType(Data.REAL);
 					loadedVal.setValue(Float.valueOf(realVal));
 				} catch (IOException e1) {
-					System.err.println(e1);
+					err.println(e1);
 				} catch (NumberFormatException e2) {
 					currentException = typeMismatch;
 					ExitStatus exceptionStatus = raiseException(currInst);
@@ -563,7 +602,7 @@ public class PAL {
 			}
 		}
 
-		System.err.println("Program failed to execute a termination"
+		err.println("Program failed to execute a termination"
 				+ " instruction (JMP 0 0).");
 		return ExitStatus.ABNORMAL;
 	}
@@ -931,7 +970,7 @@ public class PAL {
 					pushBack.unread(nextByte);
 				}
 			} catch (IOException e) {
-				System.err.println(e);
+				err.println(e);
 			}
 			break;
 		case 20:
@@ -944,13 +983,13 @@ public class PAL {
 				return ExitStatus.ABNORMAL;
 			} else {
 				tos = dataStack.pop();
-				System.out.print(tos);
+				out.print(tos);
 			}
 			break;
 		case 21:
 			// Print a newline.
 
-			System.out.println();
+			out.println();
 			break;
 		case 22:
 			// Swap the top two elements on the stack.
@@ -1065,7 +1104,7 @@ public class PAL {
 			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(pushValue)));
 			break;
 		default:
-			System.out.println("OPR " + opr + ": not implemented.");
+			out.println("OPR " + opr + ": not implemented.");
 		}
 		return ExitStatus.NORMAL;
 	}
@@ -1196,21 +1235,24 @@ public class PAL {
 	 */
 	private void error(Code currInst, String s) {
 		// Ensure the error is always started on a new line.
-		System.err.println();
-		System.err.println("Runtime Error:");
-		System.err.println(filename + ":" + currInst.getLineNo() + ":" + s);
-		System.err.println(currInst);
-		System.err.println("\nStack dump:");
-		System.err.println("----------");
-		System.err.print(dataStack);
+		err.println();
+		err.println("Runtime Error:");
+		err.println(filename + ":" + currInst.getLineNo() + ":" + s);
+		err.println(currInst);
+		err.println("\nStack dump:");
+		err.println("----------");
+		err.print(dataStack);
 		return;
 	}
 
 	/**
 	 * Simple usage information.
+	 *
+	 * @param stream
+	 *            stream to print the usage message to
 	 */
-	private static void usage() {
-		System.out.println("usage: java -jar PAL.jar [filename]");
+	private static void usage(PrintStream stream) {
+		stream.println("usage: java -jar PAL.jar [filename]");
 		return;
 	}
 }
