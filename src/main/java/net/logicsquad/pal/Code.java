@@ -27,8 +27,7 @@ final class Code {
 	 * Constructor.
 	 * 
 	 * @param mnemonic
-	 *            A <code>String</code> containing the three letter mnemonic for
-	 *            this <code>Code</code> object.
+	 *            The <code>Mnemonic</code> for this <code>Code</code> object.
 	 * @param first
 	 *            An <code>int</code> representing the first argument to the
 	 *            instruction. If there is no first argument, this value should
@@ -44,8 +43,8 @@ final class Code {
 	 *            the line number in the source file where this instruction
 	 *            originated.
 	 */
-	Code(String mnemonic, int first, Object second, int lineno) {
-		this.mnemonic = Mnemonic.valueOf(mnemonic);
+	Code(Mnemonic mnemonic, int first, Object second, int lineno) {
+		this.mnemonic = mnemonic;
 		this.first = first;
 		this.second = second;
 		this.lineno = lineno;
@@ -55,8 +54,7 @@ final class Code {
 	/**
 	 * Returns the three letter mnemonic for this instruction.
 	 * 
-	 * @return A <code>String</code> containing the three letter mnemonic for
-	 *         this instruction.
+	 * @return The <code>Mnemonic</code> for this instruction.
 	 */
 	public Mnemonic getMnemonic() {
 		return mnemonic;

@@ -1,5 +1,9 @@
 package net.logicsquad.pal;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * Represents the set of instruction mnemonics.
  * 
@@ -101,4 +105,30 @@ enum Mnemonic {
 	 * <code>STO</code>
 	 */
 	STO;
+
+	/**
+	 * Mnemonics by name, supporting {@link #from(String)}.
+	 */
+	private static final Map<String, Mnemonic> LOOKUP = new HashMap<>();
+
+	static {
+		for (Mnemonic each : values()) {
+			LOOKUP.put(each.name(), each);
+		}
+	}
+
+	/**
+	 * Returns the <code>Mnemonic</code> named by <code>token</code>, if there
+	 * is one. Unlike {@link #valueOf(String)}, an unrecognised token is not an
+	 * exceptional condition: object files are user input, so the caller is
+	 * expected to report the problem against the offending line.
+	 *
+	 * @param token
+	 *            a candidate mnemonic, as it appears in an object file
+	 * @return the matching <code>Mnemonic</code>, or an empty
+	 *         <code>Optional</code> if <code>token</code> does not name one
+	 */
+	static Optional<Mnemonic> from(String token) {
+		return Optional.ofNullable(LOOKUP.get(token));
+	}
 }

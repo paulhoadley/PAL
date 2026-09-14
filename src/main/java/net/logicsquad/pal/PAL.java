@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.PushbackReader;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.StringTokenizer;
 
 /**
@@ -112,7 +113,7 @@ public class PAL {
 			BufferedReader br = new BufferedReader(new InputStreamReader(is));
 			int lineno = 1;
 			String line = br.readLine();
-			String mnemonic = "";
+			Mnemonic mnemonic = null;
 			int first = 0;
 			Object second = null;
 			StringTokenizer st;
@@ -136,7 +137,14 @@ public class PAL {
 				// May not come in groups of three, in which case,
 				// catch the error.
 				try {
-					mnemonic = st.nextToken();
+					String token = st.nextToken();
+					Optional<Mnemonic> parsed = Mnemonic.from(token);
+					if (parsed.isEmpty()) {
+						System.err.println("Unknown mnemonic '" + token
+								+ "' on line " + lineno);
+						System.exit(ExitStatus.ABNORMAL.exitCode);
+					}
+					mnemonic = parsed.get();
 					first = Integer.parseInt(st.nextToken());
 					String s = st.nextToken();
 					if (s.startsWith("'")) {
@@ -552,9 +560,6 @@ public class PAL {
 				loadedVal.setValue(tos.getValue());
 
 				break;
-			default:
-				System.out.println(currInst.getMnemonic()
-						+ ": not implemented.");
 			}
 		}
 
