@@ -61,15 +61,24 @@ public class PAL {
 	private static final int typeMismatch = 3;
 	private static final int reachedEOF = 4;
 
-	private enum ExitStatus {
+	enum ExitStatus {
 		NORMAL(0),
 		ABNORMAL(1);
 
 		private final int exitCode;
 
-		private ExitStatus(int exitCode) {
+		ExitStatus(int exitCode) {
 			this.exitCode = exitCode;
 			return;
+		}
+
+		/**
+		 * Returns the process exit code corresponding to this status.
+		 *
+		 * @return the process exit code
+		 */
+		int exitCode() {
+			return exitCode;
 		}
 	}
 
@@ -82,7 +91,7 @@ public class PAL {
 	public static void main(String[] args) {
 		if (args.length > 1) {
 			usage(System.out);
-			System.exit(ExitStatus.ABNORMAL.exitCode);
+			System.exit(ExitStatus.ABNORMAL.exitCode());
 		} else if (args.length == 1) {
 			filename = args[0];
 		}
@@ -101,7 +110,7 @@ public class PAL {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.exit(status.exitCode);
+		System.exit(status.exitCode());
 	}
 
 	/**
@@ -152,7 +161,7 @@ public class PAL {
 				if (lineno > CODESIZE) {
 					err.println("Exceeded code storage limit at line "
 							+ lineno);
-					System.exit(ExitStatus.ABNORMAL.exitCode);
+					System.exit(ExitStatus.ABNORMAL.exitCode());
 				}
 				st = new StringTokenizer(line);
 
@@ -172,7 +181,7 @@ public class PAL {
 					if (parsed.isEmpty()) {
 						err.println("Unknown mnemonic '" + token
 								+ "' on line " + lineno);
-						System.exit(ExitStatus.ABNORMAL.exitCode);
+						System.exit(ExitStatus.ABNORMAL.exitCode());
 					}
 					mnemonic = parsed.get();
 					first = Integer.parseInt(st.nextToken());
@@ -186,16 +195,16 @@ public class PAL {
 						if (second instanceof String) {
 							err.println("Unrecognised second operand"
 									+ " on line " + lineno);
-							System.exit(ExitStatus.ABNORMAL.exitCode);
+							System.exit(ExitStatus.ABNORMAL.exitCode());
 						}
 					}
 				} catch (NoSuchElementException e) {
 					err.println("Not enough tokens on line " + lineno);
-					System.exit(ExitStatus.ABNORMAL.exitCode);
+					System.exit(ExitStatus.ABNORMAL.exitCode());
 				} catch (NumberFormatException e) {
 					err.println("First operand non-integer on line "
 							+ lineno);
-					System.exit(ExitStatus.ABNORMAL.exitCode);
+					System.exit(ExitStatus.ABNORMAL.exitCode());
 				}
 				codeMem.add(new Code(mnemonic, first, second, lineno));
 				line = br.readLine();
@@ -210,10 +219,10 @@ public class PAL {
 			inputReader = new BufferedReader(pushBack, 1);
 		} catch (FileNotFoundException e) {
 			usage(err);
-			System.exit(ExitStatus.ABNORMAL.exitCode);
+			System.exit(ExitStatus.ABNORMAL.exitCode());
 		} catch (IOException e) {
 			err.println(e);
-			System.exit(ExitStatus.ABNORMAL.exitCode);
+			System.exit(ExitStatus.ABNORMAL.exitCode());
 		}
 
 		currentException = 0;
