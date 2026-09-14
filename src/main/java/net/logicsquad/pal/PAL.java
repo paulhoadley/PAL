@@ -74,32 +74,26 @@ public class PAL {
 	public static void main(String[] args) {
 		if (args.length > 1) {
 			usage();
-			System.exit(1);
+			System.exit(ExitStatus.ABNORMAL.exitCode);
 		} else if (args.length == 1) {
 			filename = args[0];
 		}
 
-		// Make a machine and load the code.
-
-		// Execute.
-		ExitStatus status = null;
+		// Make a machine and load the code. Anything that stops us
+		// getting as far as a termination instruction is abnormal.
+		ExitStatus status = ExitStatus.ABNORMAL;
 		try {
 			PAL machine = new PAL(new FileInputStream(filename));
 			status = machine.execute();
 		} catch (OutOfMemoryError e) {
 			System.err.println(e.getMessage());
-			System.exit(1);
 		} catch (IndexOutOfBoundsException e) {
 			System.err.println(e.getMessage());
-			System.exit(1);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		if (status == null || status == ExitStatus.ABNORMAL) {
-			System.exit(ExitStatus.ABNORMAL.exitCode);
-		}
-		return;
+		System.exit(status.exitCode);
 	}
 
 	/**
@@ -178,10 +172,10 @@ public class PAL {
 			inputReader = new BufferedReader(pushBack, 1);
 		} catch (FileNotFoundException e) {
 			usage();
-			System.exit(1);
+			System.exit(ExitStatus.ABNORMAL.exitCode);
 		} catch (IOException e) {
 			System.err.println(e);
-			System.exit(1);
+			System.exit(ExitStatus.ABNORMAL.exitCode);
 		}
 
 		currentException = 0;
@@ -284,7 +278,7 @@ public class PAL {
 
 				if (destination == 0) {
 					// "JMP 0 0" signifies program termination.
-					return ExitStatus.ABNORMAL;
+					return ExitStatus.NORMAL;
 				}
 
 				if (destination < 1 || destination > codeMem.size()) {
