@@ -1,0 +1,11 @@
+
+Runtime Error:
+REALWHEREINTEGER:1:Argument to LCI must be an integer.
+LCI 0 1.5
+
+Stack dump:
+----------
+0
+0
+0
+0

@@ -1,0 +1,12 @@
+
+Runtime Error:
+OPROUTOFRANGE:2:Argument to OPR must be in range 0-31.
+OPR 0 32
+
+Stack dump:
+----------
+3
+0
+0
+0
+0
