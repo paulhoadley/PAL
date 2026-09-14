@@ -1,0 +1,69 @@
+name: release
+
+# Building and publishing is CI's job; deciding the version, writing the
+# changelog and tagging stay manual. See CHANGELOG.md for the release notes
+# this reads.
+on:
+  push:
+    tags: ['release/**']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+
+      - name: Build
+        run: mvn --batch-mode --update-snapshots verify
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          tag="${GITHUB_REF#refs/tags/}"
+          version="${tag#release/}"
+
+          # Named for the version rather than found by glob, so a tag that
+          # disagrees with the POM fails here instead of shipping the wrong
+          # artefact.
+          jar="target/pal-${version}.jar"
+          if [ ! -f "$jar" ]; then
+            echo "No $jar. Does the POM version match tag $tag?" >&2
+            ls -1 target/*.jar >&2 || true
+            exit 1
+          fi
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; attaching the jar to it."
+          else
+            # Release notes are the changelog section for this version, which
+            # is the convention 0.3 and 0.4 already follow.
+            notes=$(awk -v v="$version" '
+              index($0, "## Release " v " ") == 1 { found = 1; next }
+              found && index($0, "## ") == 1 { exit }
+              found { print }
+            ' CHANGELOG.md)
+
+            if [ -z "$(printf '%s' "$notes" | tr -d '[:space:]')" ]; then
+              echo "No '## Release $version' section in CHANGELOG.md." >&2
+              exit 1
+            fi
+
+            printf '%s\n' "$notes" > release-notes.md
+            gh release create "$tag" --title "$version" --notes-file release-notes.md
+          fi
+
+          gh release upload "$tag" "$jar" --clobber
