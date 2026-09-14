@@ -9,7 +9,7 @@ import java.util.List;
  * @author Philip Roberts &lt;philip.roberts@gmail.com&gt;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
-public class DataStack {
+final class DataStack {
 	/** A container for the <code>Data</code> objects. */
 	private List<Data> data;
 
@@ -25,7 +25,7 @@ public class DataStack {
 	/**
 	 * Default constructor. Assumes no limit on stack size.
 	 */
-	public DataStack() {
+	DataStack() {
 		this(0);
 	}
 
@@ -35,7 +35,7 @@ public class DataStack {
 	 * @param max
 	 *            Maximum stack size.
 	 */
-	public DataStack(int max) {
+	DataStack(int max) {
 		top = 0;
 
 		data = new ArrayList<Data>();
@@ -161,15 +161,15 @@ public class DataStack {
 	 */
 	public void markStack(int staticLink, int dynamicLink)
 			throws OutOfMemoryError {
-		push(new Data(Data.INT, new Integer(staticLink)));
-		push(new Data(Data.INT, new Integer(dynamicLink)));
+		push(new Data(Data.INT, Integer.valueOf(staticLink)));
+		push(new Data(Data.INT, Integer.valueOf(dynamicLink)));
 
 		// Leave space for return point.
-		push(new Data(Data.INT, new Integer(0)));
+		push(new Data(Data.INT, Integer.valueOf(0)));
 
 		// Dummy exception handler address - indicates that no handler
 		// is registered.
-		push(new Data(Data.INT, new Integer(0)));
+		push(new Data(Data.INT, Integer.valueOf(0)));
 	}
 
 	/**

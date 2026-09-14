@@ -6,7 +6,7 @@ package net.logicsquad.pal;
  * @author Philip Roberts &lt;philip.roberts@gmail.com&gt;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
-public class Data implements Cloneable {
+final class Data implements Cloneable {
 	/** The type of this datum. */
 	private int type;
 
@@ -37,7 +37,7 @@ public class Data implements Cloneable {
 	 *            An <code>Object</code> representing the value of this datum.
 	 * @see Code#Code
 	 */
-	public Data(int type, Object value) {
+	Data(int type, Object value) {
 		this.type = type;
 		this.value = value;
 		return;
@@ -54,11 +54,11 @@ public class Data implements Cloneable {
 		if (value == null) {
 			valCopy = null;
 		} else if (value instanceof Integer) {
-			valCopy = new Integer(((Integer) value).intValue());
+			valCopy = Integer.valueOf(((Integer) value).intValue());
 		} else if (value instanceof Float) {
-			valCopy = new Float(((Float) value).floatValue());
+			valCopy = Float.valueOf(((Float) value).floatValue());
 		} else if (value instanceof Boolean) {
-			valCopy = new Boolean(((Boolean) value).booleanValue());
+			valCopy = Boolean.valueOf(((Boolean) value).booleanValue());
 		} else if (value instanceof String) {
 			valCopy = new String(value.toString());
 		}

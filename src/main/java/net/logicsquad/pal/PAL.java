@@ -3,13 +3,13 @@ package net.logicsquad.pal;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PushbackReader;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.StringTokenizer;
 
 /**
@@ -75,32 +75,26 @@ public class PAL {
 	public static void main(String[] args) {
 		if (args.length > 1) {
 			usage();
-			System.exit(1);
+			System.exit(ExitStatus.ABNORMAL.exitCode);
 		} else if (args.length == 1) {
 			filename = args[0];
 		}
 
-		// Make a machine and load the code.
-
-		// Execute.
-		ExitStatus status = null;
+		// Make a machine and load the code. Anything that stops us
+		// getting as far as a termination instruction is abnormal.
+		ExitStatus status = ExitStatus.ABNORMAL;
 		try {
 			PAL machine = new PAL(new FileInputStream(filename));
 			status = machine.execute();
 		} catch (OutOfMemoryError e) {
 			System.err.println(e.getMessage());
-			System.exit(1);
 		} catch (IndexOutOfBoundsException e) {
 			System.err.println(e.getMessage());
-			System.exit(1);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		if (status == null || status == ExitStatus.ABNORMAL) {
-			System.exit(ExitStatus.ABNORMAL.exitCode);
-		}
-		return;
+		System.exit(status.exitCode);
 	}
 
 	/**
@@ -119,7 +113,7 @@ public class PAL {
 			BufferedReader br = new BufferedReader(new InputStreamReader(is));
 			int lineno = 1;
 			String line = br.readLine();
-			String mnemonic = "";
+			Mnemonic mnemonic = null;
 			int first = 0;
 			Object second = null;
 			StringTokenizer st;
@@ -143,7 +137,14 @@ public class PAL {
 				// May not come in groups of three, in which case,
 				// catch the error.
 				try {
-					mnemonic = st.nextToken();
+					String token = st.nextToken();
+					Optional<Mnemonic> parsed = Mnemonic.from(token);
+					if (parsed.isEmpty()) {
+						System.err.println("Unknown mnemonic '" + token
+								+ "' on line " + lineno);
+						System.exit(ExitStatus.ABNORMAL.exitCode);
+					}
+					mnemonic = parsed.get();
 					first = Integer.parseInt(st.nextToken());
 					String s = st.nextToken();
 					if (s.startsWith("'")) {
@@ -179,10 +180,10 @@ public class PAL {
 			inputReader = new BufferedReader(pushBack, 1);
 		} catch (FileNotFoundException e) {
 			usage();
-			System.exit(1);
+			System.exit(ExitStatus.ABNORMAL.exitCode);
 		} catch (IOException e) {
 			System.err.println(e);
-			System.exit(1);
+			System.exit(ExitStatus.ABNORMAL.exitCode);
 		}
 
 		currentException = 0;
@@ -213,7 +214,7 @@ public class PAL {
 
 			Data tos, ntos, returnPoint, loadedVal;
 
-			switch (Mnemonic.mnemonicToInt(currInst.getMnemonic())) {
+			switch (currInst.getMnemonic()) {
 			case Mnemonic.CAL:
 				// Procedure/function call.
 
@@ -221,7 +222,7 @@ public class PAL {
 				returnPoint = dataStack.get(dataStack.getTop()
 						- currInst.getFirst() - 2);
 				returnPoint.setType(Data.INT);
-				returnPoint.setValue(new Integer(pc));
+				returnPoint.setValue(Integer.valueOf(pc));
 
 				// Set new frame base.
 				dataStack.setBase(dataStack.getTop() - currInst.getFirst());
@@ -285,7 +286,7 @@ public class PAL {
 
 				if (destination == 0) {
 					// "JMP 0 0" signifies program termination.
-					return ExitStatus.ABNORMAL;
+					return ExitStatus.NORMAL;
 				}
 
 				if (destination < 1 || destination > codeMem.size()) {
@@ -312,7 +313,7 @@ public class PAL {
 				// Load a real constant onto the stack.
 
 				if (o instanceof Integer) {
-					o = new Float(((Integer) o).floatValue());
+					o = Float.valueOf(((Integer) o).floatValue());
 				}
 
 				if (!(o instanceof Float)) {
@@ -353,7 +354,7 @@ public class PAL {
 				int address = dataStack.getAddress(currInst.getFirst(),
 						((Integer) o).intValue());
 
-				dataStack.push(new Data(Data.INT, new Integer(address)));
+				dataStack.push(new Data(Data.INT, Integer.valueOf(address)));
 
 				break;
 			case Mnemonic.LDI:
@@ -432,7 +433,7 @@ public class PAL {
 					loadedVal = dataStack.get(currInst.getFirst(),
 							((Integer) o).intValue());
 					loadedVal.setType(Data.INT);
-					loadedVal.setValue(new Integer(intVal));
+					loadedVal.setValue(Integer.valueOf(intVal));
 				} catch (IOException e1) {
 					System.err.println(e1);
 				} catch (NumberFormatException e2) {
@@ -463,7 +464,7 @@ public class PAL {
 					loadedVal = dataStack.get(currInst.getFirst(),
 							((Integer) o).intValue());
 					loadedVal.setType(Data.REAL);
-					loadedVal.setValue(new Float(realVal));
+					loadedVal.setValue(Float.valueOf(realVal));
 				} catch (IOException e1) {
 					System.err.println(e1);
 				} catch (NumberFormatException e2) {
@@ -512,7 +513,7 @@ public class PAL {
 					// simple way to achieve this is to nullify the
 					// current exception handler pointer.
 					Data handlerLocation = dataStack.get(0, -1);
-					handlerLocation.setValue(new Integer(0));
+					handlerLocation.setValue(Integer.valueOf(0));
 				}
 
 				// Raise the exception...
@@ -559,9 +560,6 @@ public class PAL {
 				loadedVal.setValue(tos.getValue());
 
 				break;
-			default:
-				System.out.println(currInst.getMnemonic()
-						+ ": not implemented.");
 			}
 		}
 
@@ -652,10 +650,10 @@ public class PAL {
 			tos = dataStack.peek();
 			if (tos.getType() == Data.INT) {
 				int oldValue = ((Integer) tos.getValue()).intValue();
-				tos.setValue(new Integer(-oldValue));
+				tos.setValue(Integer.valueOf(-oldValue));
 			} else if (tos.getType() == Data.REAL) {
 				float oldValue = ((Float) tos.getValue()).floatValue();
-				tos.setValue(new Float(-oldValue));
+				tos.setValue(Float.valueOf(-oldValue));
 			} else {
 				error(currInst, "Cannot negate boolean, string or UNDEF value.");
 				return ExitStatus.ABNORMAL;
@@ -691,15 +689,15 @@ public class PAL {
 					int int2 = ((Integer) tos.getValue()).intValue();
 					switch (opr) {
 					case 3:
-						dataStack.push(new Data(Data.INT, new Integer(int1
+						dataStack.push(new Data(Data.INT, Integer.valueOf(int1
 								+ int2)));
 						break;
 					case 4:
-						dataStack.push(new Data(Data.INT, new Integer(int1
+						dataStack.push(new Data(Data.INT, Integer.valueOf(int1
 								- int2)));
 						break;
 					case 5:
-						dataStack.push(new Data(Data.INT, new Integer(int1
+						dataStack.push(new Data(Data.INT, Integer.valueOf(int1
 								* int2)));
 						break;
 					case 6:
@@ -710,7 +708,7 @@ public class PAL {
 							return ExitStatus.ABNORMAL;
 						}
 
-						dataStack.push(new Data(Data.INT, new Integer(int1
+						dataStack.push(new Data(Data.INT, Integer.valueOf(int1
 								/ int2)));
 						break;
 					default:
@@ -720,15 +718,15 @@ public class PAL {
 					float flt2 = ((Float) tos.getValue()).floatValue();
 					switch (opr) {
 					case 3:
-						dataStack.push(new Data(Data.REAL, new Float(flt1
+						dataStack.push(new Data(Data.REAL, Float.valueOf(flt1
 								+ flt2)));
 						break;
 					case 4:
-						dataStack.push(new Data(Data.REAL, new Float(flt1
+						dataStack.push(new Data(Data.REAL, Float.valueOf(flt1
 								- flt2)));
 						break;
 					case 5:
-						dataStack.push(new Data(Data.REAL, new Float(flt1
+						dataStack.push(new Data(Data.REAL, Float.valueOf(flt1
 								* flt2)));
 						break;
 					case 6:
@@ -739,7 +737,7 @@ public class PAL {
 							return ExitStatus.ABNORMAL;
 						}
 
-						dataStack.push(new Data(Data.REAL, new Float(flt1
+						dataStack.push(new Data(Data.REAL, Float.valueOf(flt1
 								/ flt2)));
 						break;
 					default:
@@ -767,11 +765,11 @@ public class PAL {
 			if (baseType == Data.INT) {
 				int base = ((Integer) ntos.getValue()).intValue();
 				int intAnswer = (int) Math.pow(base, exponent);
-				dataStack.push(new Data(Data.INT, new Integer(intAnswer)));
+				dataStack.push(new Data(Data.INT, Integer.valueOf(intAnswer)));
 			} else {
 				float base = ((Float) ntos.getValue()).floatValue();
 				float floatAnswer = (float) Math.pow(base, exponent);
-				dataStack.push(new Data(Data.REAL, new Float(floatAnswer)));
+				dataStack.push(new Data(Data.REAL, Float.valueOf(floatAnswer)));
 			}
 			break;
 		case 8:
@@ -801,9 +799,9 @@ public class PAL {
 				// NB the % operator will give a negative for a
 				// negative number.
 				if (Math.abs(((Integer) tos.getValue()).intValue() % 2) == 1) {
-					dataStack.push(new Data(Data.BOOL, new Boolean(true)));
+					dataStack.push(new Data(Data.BOOL, Boolean.valueOf(true)));
 				} else {
-					dataStack.push(new Data(Data.BOOL, new Boolean(false)));
+					dataStack.push(new Data(Data.BOOL, Boolean.valueOf(false)));
 				}
 			}
 			break;
@@ -839,27 +837,27 @@ public class PAL {
 					int int2 = ((Integer) tos.getValue()).intValue();
 					switch (opr) {
 					case 10:
-						dataStack.push(new Data(Data.BOOL, new Boolean(
+						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
 								int1 == int2)));
 						break;
 					case 11:
-						dataStack.push(new Data(Data.BOOL, new Boolean(
+						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
 								int1 != int2)));
 						break;
 					case 12:
-						dataStack.push(new Data(Data.BOOL, new Boolean(
+						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
 								int1 < int2)));
 						break;
 					case 13:
-						dataStack.push(new Data(Data.BOOL, new Boolean(
+						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
 								int1 >= int2)));
 						break;
 					case 14:
-						dataStack.push(new Data(Data.BOOL, new Boolean(
+						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
 								int1 > int2)));
 						break;
 					case 15:
-						dataStack.push(new Data(Data.BOOL, new Boolean(
+						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
 								int1 <= int2)));
 						break;
 					default:
@@ -869,27 +867,27 @@ public class PAL {
 					float flt2 = ((Float) tos.getValue()).floatValue();
 					switch (opr) {
 					case 10:
-						dataStack.push(new Data(Data.BOOL, new Boolean(
+						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
 								flt1 == flt2)));
 						break;
 					case 11:
-						dataStack.push(new Data(Data.BOOL, new Boolean(
+						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
 								flt1 != flt2)));
 						break;
 					case 12:
-						dataStack.push(new Data(Data.BOOL, new Boolean(
+						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
 								flt1 < flt2)));
 						break;
 					case 13:
-						dataStack.push(new Data(Data.BOOL, new Boolean(
+						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
 								flt1 >= flt2)));
 						break;
 					case 14:
-						dataStack.push(new Data(Data.BOOL, new Boolean(
+						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
 								flt1 > flt2)));
 						break;
 					case 15:
-						dataStack.push(new Data(Data.BOOL, new Boolean(
+						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
 								flt1 <= flt2)));
 						break;
 					default:
@@ -909,17 +907,17 @@ public class PAL {
 			}
 
 			boolean bResult = !((Boolean) tos.getValue()).booleanValue();
-			dataStack.push(new Data(Data.BOOL, new Boolean(bResult)));
+			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(bResult)));
 			break;
 		case 17:
 			// Push boolean true on TOS.
 
-			dataStack.push(new Data(Data.BOOL, new Boolean(true)));
+			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(true)));
 			break;
 		case 18:
 			// Push boolean false on TOS
 
-			dataStack.push(new Data(Data.BOOL, new Boolean(false)));
+			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(false)));
 			break;
 		case 19:
 			// Test for EOF.
@@ -927,9 +925,9 @@ public class PAL {
 			try {
 				int nextByte = pushBack.read();
 				if (nextByte == -1) {
-					dataStack.push(new Data(Data.BOOL, new Boolean(true)));
+					dataStack.push(new Data(Data.BOOL, Boolean.valueOf(true)));
 				} else {
-					dataStack.push(new Data(Data.BOOL, new Boolean(false)));
+					dataStack.push(new Data(Data.BOOL, Boolean.valueOf(false)));
 					pushBack.unread(nextByte);
 				}
 			} catch (IOException e) {
@@ -982,7 +980,7 @@ public class PAL {
 				return ExitStatus.ABNORMAL;
 			}
 			float fAns = ((Integer) dataStack.pop().getValue()).floatValue();
-			dataStack.push(new Data(Data.REAL, new Float(fAns)));
+			dataStack.push(new Data(Data.REAL, Float.valueOf(fAns)));
 			break;
 		case 26:
 			// Convert the real at TOS to an integer.
@@ -993,7 +991,7 @@ public class PAL {
 				return ExitStatus.ABNORMAL;
 			}
 			int iResult = ((Float) dataStack.pop().getValue()).intValue();
-			dataStack.push(new Data(Data.INT, new Integer(iResult)));
+			dataStack.push(new Data(Data.INT, Integer.valueOf(iResult)));
 			break;
 		case 27:
 			// Convert the integer at TOS to a string.
@@ -1031,7 +1029,7 @@ public class PAL {
 			}
 			boolean bool1 = ((Boolean) tos.getValue()).booleanValue();
 			boolean bool2 = ((Boolean) ntos.getValue()).booleanValue();
-			dataStack.push(new Data(Data.BOOL, new Boolean(bool1 && bool2)));
+			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(bool1 && bool2)));
 			break;
 		case 30:
 			// Logical or of two booleans.
@@ -1047,7 +1045,7 @@ public class PAL {
 			}
 			bool1 = ((Boolean) tos.getValue()).booleanValue();
 			bool2 = ((Boolean) ntos.getValue()).booleanValue();
-			dataStack.push(new Data(Data.BOOL, new Boolean(bool1 || bool2)));
+			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(bool1 || bool2)));
 			break;
 		case 31:
 			// Test whether the current exception code is the same as
@@ -1064,7 +1062,7 @@ public class PAL {
 			int testValue = ((Integer) tos.getValue()).intValue();
 			boolean pushValue = testValue == currentException;
 
-			dataStack.push(new Data(Data.BOOL, new Boolean(pushValue)));
+			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(pushValue)));
 			break;
 		default:
 			System.out.println("OPR " + opr + ": not implemented.");
@@ -1090,11 +1088,11 @@ public class PAL {
 		// We are expecting an integer, real or string.
 		Object output;
 		try {
-			output = new Integer(input);
+			output = Integer.valueOf(input);
 			return output;
 		} catch (NumberFormatException e1) {
 			try {
-				output = new Float(input);
+				output = Float.valueOf(input);
 				return output;
 			} catch (NumberFormatException e2) {
 				return input;

@@ -6,13 +6,13 @@ package net.logicsquad.pal;
  * @author Philip Roberts &lt;philip.roberts@gmail.com&gt;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
-public class Code {
+final class Code {
 	/**
 	 * The three-letter mnemonic for this instruction.
 	 * 
 	 * @see Mnemonic
 	 */
-	private String mnemonic;
+	private Mnemonic mnemonic;
 
 	/** The first argument to the instruction. */
 	private int first;
@@ -27,8 +27,7 @@ public class Code {
 	 * Constructor.
 	 * 
 	 * @param mnemonic
-	 *            A <code>String</code> containing the three letter mnemonic for
-	 *            this <code>Code</code> object.
+	 *            The <code>Mnemonic</code> for this <code>Code</code> object.
 	 * @param first
 	 *            An <code>int</code> representing the first argument to the
 	 *            instruction. If there is no first argument, this value should
@@ -44,7 +43,7 @@ public class Code {
 	 *            the line number in the source file where this instruction
 	 *            originated.
 	 */
-	public Code(String mnemonic, int first, Object second, int lineno) {
+	Code(Mnemonic mnemonic, int first, Object second, int lineno) {
 		this.mnemonic = mnemonic;
 		this.first = first;
 		this.second = second;
@@ -55,10 +54,9 @@ public class Code {
 	/**
 	 * Returns the three letter mnemonic for this instruction.
 	 * 
-	 * @return A <code>String</code> containing the three letter mnemonic for
-	 *         this instruction.
+	 * @return The <code>Mnemonic</code> for this instruction.
 	 */
-	public String getMnemonic() {
+	public Mnemonic getMnemonic() {
 		return mnemonic;
 	}
 
