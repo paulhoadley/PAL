@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>net.logicsquad</groupId>
   <artifactId>pal</artifactId>
-  <version>0.6</version>
+  <version>0.7</version>
   <packaging>jar</packaging>
   <name>PAL</name>
   <description>The PAL Abstract Machine—An implementation in Java.</description>
@@ -60,7 +60,7 @@
          silently compiles against that JDK's APIs. -->
     <maven.compiler.release>21</maven.compiler.release>
     <!-- Fixed timestamp for reproducible builds. Bump at each release. -->
-    <project.build.outputTimestamp>2026-09-14T00:00:00Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-09-16T00:00:00Z</project.build.outputTimestamp>
   </properties>
 
   <build>
@@ -147,7 +147,6 @@
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
-          <additionalJOption>-Xdoclint:none</additionalJOption>
           <detectLinks />
           <show>private</show>
         </configuration>

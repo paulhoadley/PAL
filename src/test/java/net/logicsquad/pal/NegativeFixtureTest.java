@@ -23,7 +23,7 @@ import org.junit.jupiter.api.TestFactory;
  * Unlike {@link PALTest}, each fixture runs in its own JVM. Since #28 the
  * loader throws rather than calling <code>System.exit()</code>, so these could
  * now run in process; they stay out of process because doing so checks the
- * real process exit code, and the mapping from {@link PAL.ExitStatus} to that
+ * real process exit code, and the mapping from {@link ExitStatus} to that
  * code is part of what the fixtures are for.
  *
  * <p>

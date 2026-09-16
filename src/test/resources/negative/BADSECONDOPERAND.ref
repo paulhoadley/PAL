@@ -1,1 +1,1 @@
-BADSECONDOPERAND:1: Unrecognised second operand.
+BADSECONDOPERAND:1: LCI takes an integer operand.

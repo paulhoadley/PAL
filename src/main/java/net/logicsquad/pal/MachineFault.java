@@ -8,19 +8,20 @@ package net.logicsquad.pal;
  * <p>
  * The fault does not carry the offending instruction. It is raised in
  * {@link DataStack}, which has no idea which instruction is executing;
- * {@link PAL#execute()} catches it and renders it against the instruction it
+ * {@link Machine#execute()} catches it and renders it against the instruction it
  * was running at the time, in the same format as every other runtime
  * diagnostic.
  *
  * <p>
  * The type mismatches an instruction can provoke are not represented here. They
- * are still reported inline by <code>PAL.error()</code>, because #33 moves
+ * are still reported inline by {@code PAL.error()}, because #33 moves
  * operand checking to load time and will remove most of those sites rather than
  * convert them.
  *
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
 final class MachineFault extends PALException {
+	/** Serialisation version. */
 	private static final long serialVersionUID = 1L;
 
 	/**
@@ -52,7 +53,6 @@ final class MachineFault extends PALException {
 	private MachineFault(Kind kind, String message) {
 		super(message);
 		this.kind = kind;
-		return;
 	}
 
 	/**

@@ -1,7 +1,6 @@
 package net.logicsquad.pal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,9 +21,8 @@ public class DataStackTest {
 		DataStack stack = new DataStack();
 		assertEquals(MARK_SIZE, stack.getTop(), "mark occupies four slots");
 		for (int i = 0; i < MARK_SIZE; i++) {
-			assertEquals(Data.INT, stack.get(i).getType(), "mark slot " + i + " is an integer");
-			assertEquals(0, ((Integer) stack.get(i).getValue()).intValue(),
-					"mark slot " + i + " starts at zero");
+			assertEquals(new IntValue(0), stack.get(i),
+					"mark slot " + i + " starts as integer zero");
 		}
 	}
 
@@ -40,7 +38,7 @@ public class DataStackTest {
 	public void pushAndPopAreSymmetric() {
 		DataStack stack = new DataStack();
 		int before = stack.getTop();
-		Data datum = new Data(Data.INT, Integer.valueOf(7));
+		Datum datum = new IntValue(7);
 		stack.push(datum);
 		assertEquals(before + 1, stack.getTop());
 		assertSame(datum, stack.peek(), "peek leaves the datum in place");
@@ -56,7 +54,7 @@ public class DataStackTest {
 		stack.incTop(3);
 		assertEquals(before + 3, stack.getTop());
 		for (int i = before; i < stack.getTop(); i++) {
-			assertEquals(Data.UNDEF, stack.get(i).getType());
+			assertEquals(Undef.INSTANCE, stack.get(i));
 			assertEquals("UNDEF", stack.get(i).toString());
 		}
 	}
@@ -74,8 +72,8 @@ public class DataStackTest {
 	@Test
 	public void popRefusesToGoBelowTheFrameBase() {
 		DataStack stack = new DataStack();
-		stack.push(new Data(Data.INT, Integer.valueOf(1)));
-		assertEquals(1, ((Integer) stack.pop().getValue()).intValue(),
+		stack.push(new IntValue(1));
+		assertEquals(new IntValue(1), stack.pop(),
 				"the frame's own value pops normally");
 
 		assertEquals(MachineFault.Kind.STACK_UNDERFLOW,
@@ -99,7 +97,7 @@ public class DataStackTest {
 		// A frame of its own, as a call would build it.
 		stack.markStack(outerTop, outerTop);
 		stack.setBase(stack.getTop());
-		stack.push(new Data(Data.INT, Integer.valueOf(7)));
+		stack.push(new IntValue(7));
 
 		// Unwinding takes the frame and its mark; pop refuses to.
 		stack.unwind(stack.getAddress(0, -MARK_SIZE));
@@ -124,7 +122,7 @@ public class DataStackTest {
 	public void unlimitedStackGrowsPastAnyReasonableSize() {
 		DataStack stack = new DataStack();
 		for (int i = 0; i < 5000; i++) {
-			stack.push(new Data(Data.INT, Integer.valueOf(i)));
+			stack.push(new IntValue(i));
 		}
 		assertEquals(5000 + MARK_SIZE, stack.getTop());
 	}
@@ -152,11 +150,11 @@ public class DataStackTest {
 
 		DataStack byPush = new DataStack(10);
 		for (int i = MARK_SIZE; i < 10; i++) {
-			byPush.push(new Data(Data.INT, Integer.valueOf(i)));
+			byPush.push(new IntValue(i));
 		}
 		assertEquals(10, byPush.getTop(), "push reaches the same limit");
 		assertThrows(MachineFault.class,
-				() -> byPush.push(new Data(Data.INT, Integer.valueOf(0))),
+				() -> byPush.push(new IntValue(0)),
 				"and goes no further");
 		assertEquals(10, byPush.getTop(), "a refused push leaves the stack alone");
 	}
@@ -164,18 +162,35 @@ public class DataStackTest {
 	@Test
 	public void dumpListsTheStackFromTheTopDown() {
 		DataStack stack = new DataStack();
-		stack.push(new Data(Data.STRING, "top"));
+		stack.push(new StringValue("top"));
 		String dump = stack.toString();
 		assertTrue(dump.startsWith("top"), "uppermost element comes first: " + dump);
 		assertEquals(MARK_SIZE + 1, dump.lines().count(), "one line per slot");
 	}
 
+	/**
+	 * What the hand-written <code>clone()</code> removed by #32 existed to
+	 * guarantee. A value can now sit in two cells at once, because overwriting
+	 * a cell replaces what is in it rather than reaching into it.
+	 */
 	@Test
-	public void dataClonesAreIndependent() {
-		Data original = new Data(Data.INT, Integer.valueOf(1));
-		Data copy = (Data) original.clone();
-		assertNotSame(original, copy);
-		copy.setValue(Integer.valueOf(2));
-		assertEquals(1, ((Integer) original.getValue()).intValue(), "clone does not share state");
+	public void cellsAreIndependentThoughValuesAreShared() {
+		DataStack stack = new DataStack();
+		Datum seven = new IntValue(7);
+		stack.push(seven);
+		stack.push(seven);
+		assertSame(seven, stack.get(stack.getTop() - 1), "the same value, twice");
+
+		stack.set(stack.getTop() - 1, new IntValue(8));
+		assertEquals(new IntValue(8), stack.get(stack.getTop() - 1), "the cell changed");
+		assertSame(seven, stack.get(stack.getTop() - 2), "the other cell did not");
+	}
+
+	@Test
+	public void setRefusesAnAddressOutsideTheStack() {
+		DataStack stack = new DataStack();
+		assertEquals(MachineFault.Kind.BAD_ADDRESS,
+				assertThrows(MachineFault.class,
+						() -> stack.set(stack.getTop(), new IntValue(1))).kind());
 	}
 }

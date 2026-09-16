@@ -1,0 +1,26 @@
+# Matches the house style this project has used since 2002.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.java]
+indent_style = tab
+indent_size = 4
+max_line_length = 80
+
+[*.{xml,yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+# Object files and their expected output are data: leave them exactly as they
+# are. Several deliberately carry tabs, trailing spaces or no final newline.
+[src/test/resources/**]
+trim_trailing_whitespace = false
+insert_final_newline = false

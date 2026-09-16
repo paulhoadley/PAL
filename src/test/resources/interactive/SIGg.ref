@@ -7,7 +7,7 @@ Main exh: exception 8.
 
 Runtime Error:
 CODE:167:Exception #8 never handled!
-SIG 0 0
+SIG 0 0 --This may be interesting.  Subject of a TODO.
 
 Stack dump:
 ----------

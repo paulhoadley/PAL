@@ -1,7 +1,7 @@
 86.25
 Runtime Error:
-CODE:11:Exponent must be of type integer.
-OPR 0 7
+CODE:11:power: exponent must be an integer.
+OPR	0	7
 
 Stack dump:
 ----------

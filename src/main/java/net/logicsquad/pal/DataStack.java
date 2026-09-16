@@ -10,8 +10,8 @@ import java.util.List;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
 final class DataStack {
-	/** A container for the <code>Data</code> objects. */
-	private List<Data> data;
+	/** A container for the values on the stack. */
+	private List<Datum> data;
 
 	/** The address of the current frame's base. */
 	private int frameBase;
@@ -38,7 +38,7 @@ final class DataStack {
 	DataStack(int max) {
 		top = 0;
 
-		data = new ArrayList<Data>();
+		data = new ArrayList<Datum>();
 
 		// Set up mark stack part for main program activation record.
 		markStack(0, 0);
@@ -53,11 +53,11 @@ final class DataStack {
 	 * Put a data object onto the top of the stack.
 	 * 
 	 * @param datum
-	 *            A <code>Data</code> object to be pushed onto the stack.
-	 * @exception MachineFault
+	 *            the value to push onto the stack.
+	 * @throws MachineFault
 	 *                if there is insufficient free stack space.
 	 */
-	public void push(Data datum) {
+	void push(Datum datum) {
 		if (maxSize != 0 && top + 1 > maxSize) {
 			throw MachineFault.stackOverflow(maxSize);
 		}
@@ -65,18 +65,16 @@ final class DataStack {
 		top++;
 
 		data.add(datum);
-
-		return;
 	}
 
 	/**
 	 * Pop the top value from the stack.
 	 * 
-	 * @return The <code>Data</code> object removed from the top of the stack.
-	 * @exception MachineFault
+	 * @return The value removed from the top of the stack.
+	 * @throws MachineFault
 	 *                if the current frame holds no value to pop.
 	 */
-	public Data pop() {
+	Datum pop() {
 		if (top <= frameBase) {
 			throw MachineFault.stackUnderflow();
 		}
@@ -87,11 +85,11 @@ final class DataStack {
 	/**
 	 * Peek at the top of the stack.
 	 * 
-	 * @return The <code>Data</code> object remaining on the top of the stack.
-	 * @exception MachineFault
+	 * @return The value remaining on the top of the stack.
+	 * @throws MachineFault
 	 *                if the current frame holds no value to peek at.
 	 */
-	public Data peek() {
+	Datum peek() {
 		if (top <= frameBase) {
 			throw MachineFault.stackUnderflow();
 		}
@@ -106,19 +104,17 @@ final class DataStack {
 	 * This is how the machine dismantles a frame when returning from a call or
 	 * searching for an exception handler, and it is deliberately not
 	 * {@link DataStack#pop()}: those callers must go below the current frame
-	 * base, which is exactly what <code>pop()</code> refuses to do. Keeping the
+	 * base, which is exactly what {@code pop()} refuses to do. Keeping the
 	 * two apart is what lets a pop too many be caught as the program error it
 	 * is, rather than quietly eating the frame's mark.
 	 *
 	 * @param address
 	 *            the address to unwind to
 	 */
-	public void unwind(int address) {
+	void unwind(int address) {
 		while (top > address) {
 			data.remove(--top);
 		}
-
-		return;
 	}
 
 	/**
@@ -127,11 +123,11 @@ final class DataStack {
 	 * 
 	 * @param address
 	 *            The absolute address for the target location.
-	 * @return The <code>Data</code> object at the target location.
-	 * @exception MachineFault
+	 * @return The value at the target location.
+	 * @throws MachineFault
 	 *                if the supplied address is out of bounds.
 	 */
-	public Data get(int address) {
+	Datum get(int address) {
 		if (address < 0 || address >= top) {
 			throw MachineFault.badAddress(address);
 		}
@@ -149,14 +145,38 @@ final class DataStack {
 	 *            location.
 	 * @param offset
 	 *            The offset into the target stack frame.
-	 * @return The <code>Data</code> object at the target address.
-	 * @exception MachineFault
+	 * @return The value at the target address.
+	 * @throws MachineFault
 	 *                if the supplied address is out of bounds.
 	 */
-	public Data get(int levelDiff, int offset) {
+	Datum get(int levelDiff, int offset) {
 		int address = getAddress(levelDiff, offset);
 
 		return get(address);
+	}
+
+	/**
+	 * Overwrite a data location elsewhere in the stack. The location is given
+	 * as an absolute stack address.
+	 *
+	 * <p>
+	 * Values are immutable, so an instruction that writes to a location it did
+	 * not push, and there are several, replaces the value in the cell rather
+	 * than reaching into it.
+	 *
+	 * @param address
+	 *            The absolute address for the target location.
+	 * @param datum
+	 *            The value to store there.
+	 * @throws MachineFault
+	 *                if the supplied address is out of bounds.
+	 */
+	void set(int address, Datum datum) {
+		if (address < 0 || address >= top) {
+			throw MachineFault.badAddress(address);
+		}
+
+		data.set(address, datum);
 	}
 
 	/**
@@ -165,17 +185,17 @@ final class DataStack {
 	 * 
 	 * @param amount
 	 *            The number of location to advance the TOS pointer.
-	 * @exception MachineFault
+	 * @throws MachineFault
 	 *                if an attempt is made to advance the TOS pointer beyond
 	 *                the limit of the stack memory.
 	 */
-	public void incTop(int amount) {
+	void incTop(int amount) {
 		if ((maxSize != 0) && (amount + top > maxSize)) {
 			throw MachineFault.stackOverflow(maxSize);
 		}
 
 		for (int i = 0; i < amount; i++) {
-			data.add(new Data(Data.UNDEF, null));
+			data.add(Undef.INSTANCE);
 			top++;
 		}
 	}
@@ -189,20 +209,20 @@ final class DataStack {
 	 * @param dynamicLink
 	 *            A pointer to the activation record one level below the current
 	 *            level in terms of <em>dynamic scope</em>.
-	 * @exception MachineFault
+	 * @throws MachineFault
 	 *                if the TOS pointer is advanced beyond the limit of stack
 	 *                memory.
 	 */
-	public void markStack(int staticLink, int dynamicLink) {
-		push(new Data(Data.INT, Integer.valueOf(staticLink)));
-		push(new Data(Data.INT, Integer.valueOf(dynamicLink)));
+	void markStack(int staticLink, int dynamicLink) {
+		push(new IntValue(staticLink));
+		push(new IntValue(dynamicLink));
 
 		// Leave space for return point.
-		push(new Data(Data.INT, Integer.valueOf(0)));
+		push(new IntValue(0));
 
 		// Dummy exception handler address - indicates that no handler
 		// is registered.
-		push(new Data(Data.INT, Integer.valueOf(0)));
+		push(new IntValue(0));
 	}
 
 	/**
@@ -211,7 +231,7 @@ final class DataStack {
 	 * @param address
 	 *            The address to store as the current frame base.
 	 */
-	public void setBase(int address) {
+	void setBase(int address) {
 		frameBase = address;
 	}
 
@@ -226,15 +246,21 @@ final class DataStack {
 	 * @param offset
 	 *            The offset into the target stack frame.
 	 * @return The absolute address for the target location.
-	 * @exception MachineFault
+	 * @throws MachineFault
 	 *                if the supplied level difference is invalid.
 	 */
-	public int getAddress(int levelDiff, int offset) {
+	int getAddress(int levelDiff, int offset) {
 		int result = frameBase;
 
 		for (int i = 0; i < levelDiff; i++) {
 			// Extract the static link from the stack mark.
-			result = ((Integer) get(result - 4).getValue()).intValue();
+			if (!(get(result - 4) instanceof IntValue link)) {
+				// The machine writes its own stack marks, so a link that is
+				// not an integer is a bug here rather than in the program.
+				throw new IllegalStateException(
+						"Static link at " + (result - 4) + " is not an integer.");
+			}
+			result = link.value();
 		}
 
 		result += offset;
@@ -247,22 +273,22 @@ final class DataStack {
 	 * 
 	 * @return The absolute address of the top element.
 	 */
-	public int getTop() {
+	int getTop() {
 		return top;
 	}
 
 	/**
-	 * Returns a <code>String</code> representation of the object. Effectively,
+	 * Returns a {@code String} representation of the object. Effectively,
 	 * this is a dump of the stack from the uppermost element to the lowermost.
 	 * 
-	 * @return A <code>String</code> representation of the object.
+	 * @return A {@code String} representation of the object.
 	 */
 	public String toString() {
-		String result = new String();
+		StringBuilder result = new StringBuilder();
 		for (int i = top - 1; i >= 0; i--) {
-			result += get(i) + "\n";
+			result.append(get(i)).append('\n');
 		}
 
-		return result;
+		return result.toString();
 	}
 }

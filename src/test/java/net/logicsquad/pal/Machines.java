@@ -8,7 +8,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Helper for running a short program against a {@link PAL} machine in
+ * Helper for loading and running a short program against a {@link Machine} in
  * process, without disturbing the system streams.
  *
  * <p>
@@ -21,6 +21,12 @@ import java.nio.charset.StandardCharsets;
  * @author paulh
  */
 final class Machines {
+	/**
+	 * What a program run here is called in a diagnostic. Matches the name the
+	 * command line falls back on, which is what the reference files record.
+	 */
+	static final String NAME = "CODE";
+
 	private Machines() {
 		throw new AssertionError("Not instantiable.");
 	}
@@ -48,17 +54,18 @@ final class Machines {
 	static Run run(String program, String input) {
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 		PrintStream stream = new PrintStream(buffer, true, StandardCharsets.UTF_8);
-		PAL machine;
+		Program loaded;
 		try {
-			machine = new PAL(
+			loaded = Loader.load(
 					new ByteArrayInputStream(program.getBytes(StandardCharsets.UTF_8)),
-					new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)),
-					stream, stream);
+					NAME);
 		} catch (IOException e) {
-			// Both streams are in memory, so there is nothing to fail.
+			// The stream is in memory, so there is nothing to fail.
 			throw new UncheckedIOException(e);
 		}
-		PAL.ExitStatus status = machine.execute();
+		ExitStatus status = new Machine(loaded,
+				new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)),
+				stream, stream).execute();
 		stream.flush();
 		return new Run(buffer.toString(StandardCharsets.UTF_8), status);
 	}
@@ -99,14 +106,14 @@ final class Machines {
 	 * @param status
 	 *            how the machine finished
 	 */
-	record Run(String output, PAL.ExitStatus status) {
+	record Run(String output, ExitStatus status) {
 		/**
 		 * Did the machine terminate normally?
 		 *
 		 * @return <code>true</code> if it did
 		 */
 		boolean normal() {
-			return status == PAL.ExitStatus.NORMAL;
+			return status == ExitStatus.NORMAL;
 		}
 	}
 }
