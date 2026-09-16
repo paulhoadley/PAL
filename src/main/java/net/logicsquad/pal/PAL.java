@@ -548,469 +548,743 @@ public class PAL {
 	 *            mnemonic.
 	 */
 	public ExitStatus doOperation(Instruction currInst) {
-		int opr = currInst.intOperand();
-		if (opr < 0 || opr > 31) {
+		Optional<Operation> resolved = Operation.fromCode(currInst.intOperand());
+		if (resolved.isEmpty()) {
 			error(currInst, "Argument to OPR must be in range 0-31.");
 			return ExitStatus.ABNORMAL;
 		}
 
-		Datum returnPoint, tos, ntos, dynamicLink;
+		Operation operation = resolved.get();
 
-		switch (opr) {
-		case 0:
-			// Procedure return.
+		return switch (operation) {
+		case PROCEDURE_RETURN -> procedureReturn(currInst);
+		case FUNCTION_RETURN -> functionReturn(currInst);
+		case NEGATE -> negate(currInst);
+		case ADD, SUBTRACT, MULTIPLY, DIVIDE -> arithmetic(currInst, operation);
+		case POWER -> power(currInst);
+		case CONCATENATE -> concatenate(currInst);
+		case ODD -> odd(currInst);
+		case EQUAL, NOT_EQUAL, LESS, GREATER_OR_EQUAL, GREATER, LESS_OR_EQUAL ->
+			comparison(currInst, operation);
+		case NOT -> logicalNot(currInst);
+		case TRUE -> pushTrue(currInst);
+		case FALSE -> pushFalse(currInst);
+		case AT_EOF -> atEof(currInst);
+		case PRINT -> print(currInst);
+		case NEWLINE -> newline(currInst);
+		case SWAP -> swap(currInst);
+		case DUPLICATE -> duplicate(currInst);
+		case DISCARD -> discard(currInst);
+		case INT_TO_REAL -> intToReal(currInst);
+		case REAL_TO_INT -> realToInt(currInst);
+		case INT_TO_STRING -> intToString(currInst);
+		case REAL_TO_STRING -> realToString(currInst);
+		case AND -> logicalAnd(currInst);
+		case OR -> logicalOr(currInst);
+		case TEST_EXCEPTION -> testException(currInst);
+		};
+	}
 
-			// Set program counter.
-			returnPoint = dataStack.get(0, -2);
-			pc = ((IntValue) returnPoint).value();
+	/**
+	 * Performs <code>procedure return</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus procedureReturn(Instruction currInst) {
+		Datum returnPoint, dynamicLink;
 
-			// Remember the dynamic link.
-			dynamicLink = dataStack.get(0, -3);
+		// Procedure return.
 
-			// Discard this frame, mark and all.
-			dataStack.unwind(dataStack.getAddress(0, -4));
+		// Set program counter.
+		returnPoint = dataStack.get(0, -2);
+		pc = ((IntValue) returnPoint).value();
 
-			// Set the new frame base using the remembered dynamic
-			// link.
-			dataStack.setBase(((IntValue) dynamicLink).value());
+		// Remember the dynamic link.
+		dynamicLink = dataStack.get(0, -3);
 
-			break;
-		case 1:
-			// Function return.
+		// Discard this frame, mark and all.
+		dataStack.unwind(dataStack.getAddress(0, -4));
 
-			tos = dataStack.pop();
+		// Set the new frame base using the remembered dynamic
+		// link.
+		dataStack.setBase(((IntValue) dynamicLink).value());
 
-			// Set program counter.
-			returnPoint = dataStack.get(0, -2);
-			pc = ((IntValue) returnPoint).value();
-
-			// Remember the dynamic link.
-			dynamicLink = dataStack.get(0, -3);
-
-			// Discard this frame, mark and all.
-			dataStack.unwind(dataStack.getAddress(0, -4));
-
-			// Set the new frame base using the remembered dynamic
-			// link.
-			dataStack.setBase(((IntValue) dynamicLink).value());
-
-			// Leave the return value on top of the stack.
-			dataStack.push(tos);
-
-			break;
-		case 2:
-			// Negate the value on TOS if it is an integer or real.
-
-			tos = dataStack.peek();
-			if (tos instanceof IntValue intValue) {
-				dataStack.set(dataStack.getTop() - 1,
-						new IntValue(-intValue.value()));
-			} else if (tos instanceof RealValue realValue) {
-				dataStack.set(dataStack.getTop() - 1,
-						new RealValue(-realValue.value()));
-			} else {
-				error(currInst, "Cannot negate boolean, string or UNDEF value.");
-				return ExitStatus.ABNORMAL;
-			}
-			break;
-		case 3:
-		case 4:
-		case 5:
-		case 6:
-			// Pop values at TOS and TOS-1,
-			// add/subtract/multiply/divide them (depending on the
-			// opcode) and push result onto TOS.
-
-			tos = dataStack.pop();
-			ntos = dataStack.pop();
-			if (ntos.getClass() != tos.getClass()) {
-				dataStack.push(ntos);
-				dataStack.push(tos);
-				error(currInst, "Values for arithmetic operations must be"
-						+ " of same type.");
-				return ExitStatus.ABNORMAL;
-			} else {
-				if (!(tos instanceof IntValue) && !(tos instanceof RealValue)) {
-					dataStack.push(ntos);
-					dataStack.push(tos);
-					error(currInst, "Values for arithmetic operations must be"
-							+ " of type integer or real.");
-					return ExitStatus.ABNORMAL;
-				}
-				if (tos instanceof IntValue) {
-					int int1 = ((IntValue) ntos).value();
-					int int2 = ((IntValue) tos).value();
-					switch (opr) {
-					case 3:
-						dataStack.push(new IntValue(int1
-								+ int2));
-						break;
-					case 4:
-						dataStack.push(new IntValue(int1
-								- int2));
-						break;
-					case 5:
-						dataStack.push(new IntValue(int1
-								* int2));
-						break;
-					case 6:
-						if (int2 == 0) {
-							dataStack.push(ntos);
-							dataStack.push(tos);
-							error(currInst, "Attempt to divide by zero.");
-							return ExitStatus.ABNORMAL;
-						}
-
-						dataStack.push(new IntValue(int1
-								/ int2));
-						break;
-					default:
-					}
-				} else {
-					float flt1 = ((RealValue) ntos).value();
-					float flt2 = ((RealValue) tos).value();
-					switch (opr) {
-					case 3:
-						dataStack.push(new RealValue(flt1
-								+ flt2));
-						break;
-					case 4:
-						dataStack.push(new RealValue(flt1
-								- flt2));
-						break;
-					case 5:
-						dataStack.push(new RealValue(flt1
-								* flt2));
-						break;
-					case 6:
-						if (flt2 == 0) {
-							dataStack.push(ntos);
-							dataStack.push(tos);
-							error(currInst, "Attempt to divide by zero.");
-							return ExitStatus.ABNORMAL;
-						}
-
-						dataStack.push(new RealValue(flt1
-								/ flt2));
-						break;
-					default:
-					}
-				}
-			}
-			break;
-		case 7:
-			// Raise the value at TOS-1 to the power of the value at
-			// TOS, pop both and push the result.
-
-			if (!(dataStack.peek() instanceof IntValue)) {
-				error(currInst, "Exponent must be of type integer.");
-				return ExitStatus.ABNORMAL;
-			}
-			tos = dataStack.pop();
-			int exponent = ((IntValue) tos).value();
-
-			if (!(dataStack.peek() instanceof IntValue)
-					&& !(dataStack.peek() instanceof RealValue)) {
-				error(currInst, "Base must be of type integer or real.");
-				return ExitStatus.ABNORMAL;
-			}
-			ntos = dataStack.pop();
-			if (ntos instanceof IntValue) {
-				int base = ((IntValue) ntos).value();
-				int intAnswer = (int) Math.pow(base, exponent);
-				dataStack.push(new IntValue(intAnswer));
-			} else {
-				float base = ((RealValue) ntos).value();
-				float floatAnswer = (float) Math.pow(base, exponent);
-				dataStack.push(new RealValue(floatAnswer));
-			}
-			break;
-		case 8:
-			// String concatenation.
-
-			tos = dataStack.pop();
-			ntos = dataStack.pop();
-			if (!(tos instanceof StringValue) || !(ntos instanceof StringValue)) {
-				dataStack.push(ntos);
-				dataStack.push(tos);
-				error(currInst,
-						"Both arguments to OPR 8 must be of type string.");
-				return ExitStatus.ABNORMAL;
-			}
-			String sResult = ((StringValue) ntos).value();
-			sResult += ((StringValue) tos).value();
-			dataStack.push(new StringValue(sResult));
-			break;
-		case 9:
-			// Test if TOS is an odd integer.
-
-			if (!(dataStack.peek() instanceof IntValue)) {
-				error(currInst, "Argument to OPR 9 must be of type integer.");
-				return ExitStatus.ABNORMAL;
-			} else {
-				tos = dataStack.pop();
-				// NB the % operator will give a negative for a
-				// negative number.
-				if (Math.abs(((IntValue) tos).value() % 2) == 1) {
-					dataStack.push(new BoolValue(true));
-				} else {
-					dataStack.push(new BoolValue(false));
-				}
-			}
-			break;
-		case 10:
-		case 11:
-		case 12:
-		case 13:
-		case 14:
-		case 15:
-			// Pop values at TOS and TOS-1, compare them (depending on
-			// the opcode) and push result onto TOS.
-
-			tos = dataStack.pop();
-			ntos = dataStack.pop();
-
-			if (ntos.getClass() != tos.getClass()) {
-				dataStack.push(ntos);
-				dataStack.push(tos);
-				error(currInst, "Values for comparison operations must be"
-						+ " of same type.");
-				return ExitStatus.ABNORMAL;
-			} else {
-				if (!(tos instanceof IntValue) && !(tos instanceof RealValue)) {
-					dataStack.push(ntos);
-					dataStack.push(tos);
-					error(currInst, "Values for comparison operations must be"
-							+ " of type integer or real.");
-					return ExitStatus.ABNORMAL;
-				}
-				if (tos instanceof IntValue) {
-					int int1 = ((IntValue) ntos).value();
-					int int2 = ((IntValue) tos).value();
-					switch (opr) {
-					case 10:
-						dataStack.push(new BoolValue(int1 == int2));
-						break;
-					case 11:
-						dataStack.push(new BoolValue(int1 != int2));
-						break;
-					case 12:
-						dataStack.push(new BoolValue(int1 < int2));
-						break;
-					case 13:
-						dataStack.push(new BoolValue(int1 >= int2));
-						break;
-					case 14:
-						dataStack.push(new BoolValue(int1 > int2));
-						break;
-					case 15:
-						dataStack.push(new BoolValue(int1 <= int2));
-						break;
-					default:
-					}
-				} else {
-					float flt1 = ((RealValue) ntos).value();
-					float flt2 = ((RealValue) tos).value();
-					switch (opr) {
-					case 10:
-						dataStack.push(new BoolValue(flt1 == flt2));
-						break;
-					case 11:
-						dataStack.push(new BoolValue(flt1 != flt2));
-						break;
-					case 12:
-						dataStack.push(new BoolValue(flt1 < flt2));
-						break;
-					case 13:
-						dataStack.push(new BoolValue(flt1 >= flt2));
-						break;
-					case 14:
-						dataStack.push(new BoolValue(flt1 > flt2));
-						break;
-					case 15:
-						dataStack.push(new BoolValue(flt1 <= flt2));
-						break;
-					default:
-					}
-				}
-			}
-			break;
-		case 16:
-			// Logical complement the top element of the stack.
-
-			tos = dataStack.pop();
-
-			if (!(tos instanceof BoolValue)) {
-				dataStack.push(tos);
-				error(currInst, "Top of stack must be a boolean.");
-				return ExitStatus.ABNORMAL;
-			}
-
-			boolean bResult = !((BoolValue) tos).value();
-			dataStack.push(new BoolValue(bResult));
-			break;
-		case 17:
-			// Push boolean true on TOS.
-
-			dataStack.push(new BoolValue(true));
-			break;
-		case 18:
-			// Push boolean false on TOS
-
-			dataStack.push(new BoolValue(false));
-			break;
-		case 19:
-			// Test for EOF.
-
-			try {
-				int nextByte = pushBack.read();
-				if (nextByte == -1) {
-					dataStack.push(new BoolValue(true));
-				} else {
-					dataStack.push(new BoolValue(false));
-					pushBack.unread(nextByte);
-				}
-			} catch (IOException e) {
-				err.println(e);
-			}
-			break;
-		case 20:
-			// Pop value on TOS and print it.
-
-			if (dataStack.peek() instanceof BoolValue
-					|| dataStack.peek() instanceof Undef) {
-				error(currInst, "OPR 20 can only print values"
-						+ " of type integer, real or string.");
-				return ExitStatus.ABNORMAL;
-			} else {
-				tos = dataStack.pop();
-				out.print(tos);
-			}
-			break;
-		case 21:
-			// Print a newline.
-
-			out.println();
-			break;
-		case 22:
-			// Swap the top two elements on the stack.
-
-			tos = dataStack.pop();
-			ntos = dataStack.pop();
-			dataStack.push(tos);
-			dataStack.push(ntos);
-			break;
-		case 23:
-			// Duplicate the element at the top of the stack.
-
-			tos = dataStack.peek();
-			dataStack.push(tos);
-			break;
-		case 24:
-			// Discard the element at the top of the stack.
-
-			dataStack.pop();
-			break;
-		case 25:
-			// Convert the integer at TOS to a real.
-
-			if (!(dataStack.peek() instanceof IntValue)) {
-				error(currInst, "Integer to real conversion can only be"
-						+ " performed on a value of type integer.");
-				return ExitStatus.ABNORMAL;
-			}
-			float fAns = (float) ((IntValue) dataStack.pop()).value();
-			dataStack.push(new RealValue(fAns));
-			break;
-		case 26:
-			// Convert the real at TOS to an integer.
-
-			if (!(dataStack.peek() instanceof RealValue)) {
-				error(currInst, "Real to integer conversion can only be"
-						+ " performed on a value of type real.");
-				return ExitStatus.ABNORMAL;
-			}
-			int iResult = (int) ((RealValue) dataStack.pop()).value();
-			dataStack.push(new IntValue(iResult));
-			break;
-		case 27:
-			// Convert the integer at TOS to a string.
-
-			if (!(dataStack.peek() instanceof IntValue)) {
-				error(currInst, "Integer to string conversion can only be"
-						+ " performed on a value of type integer.");
-				return ExitStatus.ABNORMAL;
-			}
-			dataStack.push(new StringValue(dataStack.pop().toString()));
-			break;
-		case 28:
-			// Convert the real at TOS to a string.
-
-			if (!(dataStack.peek() instanceof RealValue)) {
-				error(currInst, "Real to string conversion can only be"
-						+ " performed on value of type real.");
-				return ExitStatus.ABNORMAL;
-			}
-			dataStack.push(new StringValue(dataStack.pop().toString()));
-			break;
-		case 29:
-			// Logical and of two booleans.
-
-			tos = dataStack.pop();
-			ntos = dataStack.pop();
-			if (!(tos instanceof BoolValue) || !(ntos instanceof BoolValue)) {
-				dataStack.push(ntos);
-				dataStack.push(tos);
-				error(currInst, "Logical and can only be"
-						+ " performed on values of type boolean.");
-				return ExitStatus.ABNORMAL;
-			}
-			boolean bool1 = ((BoolValue) tos).value();
-			boolean bool2 = ((BoolValue) ntos).value();
-			dataStack.push(new BoolValue(bool1 && bool2));
-			break;
-		case 30:
-			// Logical or of two booleans.
-
-			tos = dataStack.pop();
-			ntos = dataStack.pop();
-			if (!(tos instanceof BoolValue) || !(ntos instanceof BoolValue)) {
-				dataStack.push(ntos);
-				dataStack.push(tos);
-				error(currInst, "Logical or can only be"
-						+ " performed on values of type boolean.");
-				return ExitStatus.ABNORMAL;
-			}
-			bool1 = ((BoolValue) tos).value();
-			bool2 = ((BoolValue) ntos).value();
-			dataStack.push(new BoolValue(bool1 || bool2));
-			break;
-		case 31:
-			// Test whether the current exception code is the same as
-			// the integer on TOS.
-
-			tos = dataStack.pop();
-			if (!(tos instanceof IntValue)) {
-				dataStack.push(tos);
-				error(currInst, "OPR 0 31 expects an integer value "
-						+ "on top of the stack.");
-				return ExitStatus.ABNORMAL;
-			}
-
-			int testValue = ((IntValue) tos).value();
-			boolean pushValue = testValue == currentException;
-
-			dataStack.push(new BoolValue(pushValue));
-			break;
-		default:
-			// Unreachable: opr is range checked above, and every operation
-			// from 0 to 31 has a case. Reaching here would be a bug in the
-			// machine rather than in the program, so say so rather than
-			// printing a note and carrying on as though nothing happened.
-			throw new IllegalStateException("No case for OPR " + opr + ".");
-		}
 		return ExitStatus.NORMAL;
 	}
+
+	/**
+	 * Performs <code>function return</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus functionReturn(Instruction currInst) {
+		Datum returnPoint, tos, dynamicLink;
+
+		// Function return.
+
+		tos = dataStack.pop();
+
+		// Set program counter.
+		returnPoint = dataStack.get(0, -2);
+		pc = ((IntValue) returnPoint).value();
+
+		// Remember the dynamic link.
+		dynamicLink = dataStack.get(0, -3);
+
+		// Discard this frame, mark and all.
+		dataStack.unwind(dataStack.getAddress(0, -4));
+
+		// Set the new frame base using the remembered dynamic
+		// link.
+		dataStack.setBase(((IntValue) dynamicLink).value());
+
+		// Leave the return value on top of the stack.
+		dataStack.push(tos);
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>negate</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus negate(Instruction currInst) {
+		Datum tos;
+
+		// Negate the value on TOS if it is an integer or real.
+
+		tos = dataStack.peek();
+		if (tos instanceof IntValue intValue) {
+			dataStack.set(dataStack.getTop() - 1,
+					new IntValue(-intValue.value()));
+		} else if (tos instanceof RealValue realValue) {
+			dataStack.set(dataStack.getTop() - 1,
+					new RealValue(-realValue.value()));
+		} else {
+			error(currInst, Operation.NEGATE,
+					"cannot negate a boolean, string or undefined value.");
+			return ExitStatus.ABNORMAL;
+		}
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>add, subtract, multiply, divide</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @param operation
+	 *            which operation to perform
+	 * @return how the operation finished
+	 */
+	private ExitStatus arithmetic(Instruction currInst, Operation operation) {
+		Datum tos, ntos;
+
+		// Pop values at TOS and TOS-1,
+		// add/subtract/multiply/divide them (depending on the
+		// opcode) and push result onto TOS.
+
+		tos = dataStack.pop();
+		ntos = dataStack.pop();
+		if (ntos.getClass() != tos.getClass()) {
+			dataStack.push(ntos);
+			dataStack.push(tos);
+			error(currInst, operation, "operands must be of the same type.");
+			return ExitStatus.ABNORMAL;
+		} else {
+			if (!(tos instanceof IntValue) && !(tos instanceof RealValue)) {
+				dataStack.push(ntos);
+				dataStack.push(tos);
+				error(currInst, operation, "operands must be integer or real.");
+				return ExitStatus.ABNORMAL;
+			}
+			if (tos instanceof IntValue) {
+				int int1 = ((IntValue) ntos).value();
+				int int2 = ((IntValue) tos).value();
+				switch (operation) {
+				case ADD:
+					dataStack.push(new IntValue(int1
+							+ int2));
+					break;
+				case SUBTRACT:
+					dataStack.push(new IntValue(int1
+							- int2));
+					break;
+				case MULTIPLY:
+					dataStack.push(new IntValue(int1
+							* int2));
+					break;
+				case DIVIDE:
+					if (int2 == 0) {
+						dataStack.push(ntos);
+						dataStack.push(tos);
+						error(currInst, operation, "attempt to divide by zero.");
+						return ExitStatus.ABNORMAL;
+					}
+
+					dataStack.push(new IntValue(int1
+							/ int2));
+					break;
+				default:
+				}
+			} else {
+				float flt1 = ((RealValue) ntos).value();
+				float flt2 = ((RealValue) tos).value();
+				switch (operation) {
+				case ADD:
+					dataStack.push(new RealValue(flt1
+							+ flt2));
+					break;
+				case SUBTRACT:
+					dataStack.push(new RealValue(flt1
+							- flt2));
+					break;
+				case MULTIPLY:
+					dataStack.push(new RealValue(flt1
+							* flt2));
+					break;
+				case DIVIDE:
+					if (flt2 == 0) {
+						dataStack.push(ntos);
+						dataStack.push(tos);
+						error(currInst, operation, "attempt to divide by zero.");
+						return ExitStatus.ABNORMAL;
+					}
+
+					dataStack.push(new RealValue(flt1
+							/ flt2));
+					break;
+				default:
+				}
+			}
+		}
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>power</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus power(Instruction currInst) {
+		Datum tos, ntos;
+
+		// Raise the value at TOS-1 to the power of the value at
+		// TOS, pop both and push the result.
+
+		if (!(dataStack.peek() instanceof IntValue)) {
+			error(currInst, Operation.POWER, "exponent must be an integer.");
+			return ExitStatus.ABNORMAL;
+		}
+		tos = dataStack.pop();
+		int exponent = ((IntValue) tos).value();
+
+		if (!(dataStack.peek() instanceof IntValue)
+				&& !(dataStack.peek() instanceof RealValue)) {
+			error(currInst, Operation.POWER, "base must be an integer or real.");
+			return ExitStatus.ABNORMAL;
+		}
+		ntos = dataStack.pop();
+		if (ntos instanceof IntValue) {
+			int base = ((IntValue) ntos).value();
+			int intAnswer = (int) Math.pow(base, exponent);
+			dataStack.push(new IntValue(intAnswer));
+		} else {
+			float base = ((RealValue) ntos).value();
+			float floatAnswer = (float) Math.pow(base, exponent);
+			dataStack.push(new RealValue(floatAnswer));
+		}
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>concatenate</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus concatenate(Instruction currInst) {
+		Datum tos, ntos;
+
+		// String concatenation.
+
+		tos = dataStack.pop();
+		ntos = dataStack.pop();
+		if (!(tos instanceof StringValue) || !(ntos instanceof StringValue)) {
+			dataStack.push(ntos);
+			dataStack.push(tos);
+			error(currInst, Operation.CONCATENATE,
+					"both operands must be strings.");
+			return ExitStatus.ABNORMAL;
+		}
+		String sResult = ((StringValue) ntos).value();
+		sResult += ((StringValue) tos).value();
+		dataStack.push(new StringValue(sResult));
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>odd</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus odd(Instruction currInst) {
+		Datum tos;
+
+		// Test if TOS is an odd integer.
+
+		if (!(dataStack.peek() instanceof IntValue)) {
+			error(currInst, Operation.ODD, "operand must be an integer.");
+			return ExitStatus.ABNORMAL;
+		} else {
+			tos = dataStack.pop();
+			// NB the % operator will give a negative for a
+			// negative number.
+			if (Math.abs(((IntValue) tos).value() % 2) == 1) {
+				dataStack.push(new BoolValue(true));
+			} else {
+				dataStack.push(new BoolValue(false));
+			}
+		}
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>equal, not equal, less, greater or equal, greater, less or equal</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @param operation
+	 *            which operation to perform
+	 * @return how the operation finished
+	 */
+	private ExitStatus comparison(Instruction currInst, Operation operation) {
+		Datum tos, ntos;
+
+		// Pop values at TOS and TOS-1, compare them (depending on
+		// the opcode) and push result onto TOS.
+
+		tos = dataStack.pop();
+		ntos = dataStack.pop();
+
+		if (ntos.getClass() != tos.getClass()) {
+			dataStack.push(ntos);
+			dataStack.push(tos);
+			error(currInst, operation, "operands must be of the same type.");
+			return ExitStatus.ABNORMAL;
+		} else {
+			if (!(tos instanceof IntValue) && !(tos instanceof RealValue)) {
+				dataStack.push(ntos);
+				dataStack.push(tos);
+				error(currInst, operation, "operands must be integer or real.");
+				return ExitStatus.ABNORMAL;
+			}
+			if (tos instanceof IntValue) {
+				int int1 = ((IntValue) ntos).value();
+				int int2 = ((IntValue) tos).value();
+				switch (operation) {
+				case EQUAL:
+					dataStack.push(new BoolValue(int1 == int2));
+					break;
+				case NOT_EQUAL:
+					dataStack.push(new BoolValue(int1 != int2));
+					break;
+				case LESS:
+					dataStack.push(new BoolValue(int1 < int2));
+					break;
+				case GREATER_OR_EQUAL:
+					dataStack.push(new BoolValue(int1 >= int2));
+					break;
+				case GREATER:
+					dataStack.push(new BoolValue(int1 > int2));
+					break;
+				case LESS_OR_EQUAL:
+					dataStack.push(new BoolValue(int1 <= int2));
+					break;
+				default:
+				}
+			} else {
+				float flt1 = ((RealValue) ntos).value();
+				float flt2 = ((RealValue) tos).value();
+				switch (operation) {
+				case EQUAL:
+					dataStack.push(new BoolValue(flt1 == flt2));
+					break;
+				case NOT_EQUAL:
+					dataStack.push(new BoolValue(flt1 != flt2));
+					break;
+				case LESS:
+					dataStack.push(new BoolValue(flt1 < flt2));
+					break;
+				case GREATER_OR_EQUAL:
+					dataStack.push(new BoolValue(flt1 >= flt2));
+					break;
+				case GREATER:
+					dataStack.push(new BoolValue(flt1 > flt2));
+					break;
+				case LESS_OR_EQUAL:
+					dataStack.push(new BoolValue(flt1 <= flt2));
+					break;
+				default:
+				}
+			}
+		}
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>not</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus logicalNot(Instruction currInst) {
+		Datum tos;
+
+		// Logical complement the top element of the stack.
+
+		tos = dataStack.pop();
+
+		if (!(tos instanceof BoolValue)) {
+			dataStack.push(tos);
+			error(currInst, Operation.NOT, "operand must be a boolean.");
+			return ExitStatus.ABNORMAL;
+		}
+
+		boolean bResult = !((BoolValue) tos).value();
+		dataStack.push(new BoolValue(bResult));
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>true</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus pushTrue(Instruction currInst) {
+		// Push boolean true on TOS.
+
+		dataStack.push(new BoolValue(true));
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>false</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus pushFalse(Instruction currInst) {
+		// Push boolean false on TOS
+
+		dataStack.push(new BoolValue(false));
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>at eof</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus atEof(Instruction currInst) {
+		// Test for EOF.
+
+		try {
+			int nextByte = pushBack.read();
+			if (nextByte == -1) {
+				dataStack.push(new BoolValue(true));
+			} else {
+				dataStack.push(new BoolValue(false));
+				pushBack.unread(nextByte);
+			}
+		} catch (IOException e) {
+			err.println(e);
+		}
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>print</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus print(Instruction currInst) {
+		Datum tos;
+
+		// Pop value on TOS and print it.
+
+		if (dataStack.peek() instanceof BoolValue
+				|| dataStack.peek() instanceof Undef) {
+			error(currInst, Operation.PRINT,
+					"can only print an integer, real or string.");
+			return ExitStatus.ABNORMAL;
+		} else {
+			tos = dataStack.pop();
+			out.print(tos);
+		}
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>newline</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus newline(Instruction currInst) {
+		// Print a newline.
+
+		out.println();
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>swap</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus swap(Instruction currInst) {
+		Datum tos, ntos;
+
+		// Swap the top two elements on the stack.
+
+		tos = dataStack.pop();
+		ntos = dataStack.pop();
+		dataStack.push(tos);
+		dataStack.push(ntos);
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>duplicate</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus duplicate(Instruction currInst) {
+		Datum tos;
+
+		// Duplicate the element at the top of the stack.
+
+		tos = dataStack.peek();
+		dataStack.push(tos);
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>discard</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus discard(Instruction currInst) {
+		// Discard the element at the top of the stack.
+
+		dataStack.pop();
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>int to real</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus intToReal(Instruction currInst) {
+		// Convert the integer at TOS to a real.
+
+		if (!(dataStack.peek() instanceof IntValue)) {
+			error(currInst, Operation.INT_TO_REAL, "operand must be an integer.");
+			return ExitStatus.ABNORMAL;
+		}
+		float fAns = (float) ((IntValue) dataStack.pop()).value();
+		dataStack.push(new RealValue(fAns));
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>real to int</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus realToInt(Instruction currInst) {
+		// Convert the real at TOS to an integer.
+
+		if (!(dataStack.peek() instanceof RealValue)) {
+			error(currInst, Operation.REAL_TO_INT, "operand must be a real.");
+			return ExitStatus.ABNORMAL;
+		}
+		int iResult = (int) ((RealValue) dataStack.pop()).value();
+		dataStack.push(new IntValue(iResult));
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>int to string</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus intToString(Instruction currInst) {
+		// Convert the integer at TOS to a string.
+
+		if (!(dataStack.peek() instanceof IntValue)) {
+			error(currInst, Operation.INT_TO_STRING, "operand must be an integer.");
+			return ExitStatus.ABNORMAL;
+		}
+		dataStack.push(new StringValue(dataStack.pop().toString()));
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>real to string</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus realToString(Instruction currInst) {
+		// Convert the real at TOS to a string.
+
+		if (!(dataStack.peek() instanceof RealValue)) {
+			error(currInst, Operation.REAL_TO_STRING, "operand must be a real.");
+			return ExitStatus.ABNORMAL;
+		}
+		dataStack.push(new StringValue(dataStack.pop().toString()));
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>and</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus logicalAnd(Instruction currInst) {
+		Datum tos, ntos;
+
+		// Logical and of two booleans.
+
+		tos = dataStack.pop();
+		ntos = dataStack.pop();
+		if (!(tos instanceof BoolValue) || !(ntos instanceof BoolValue)) {
+			dataStack.push(ntos);
+			dataStack.push(tos);
+			error(currInst, Operation.AND, "both operands must be booleans.");
+			return ExitStatus.ABNORMAL;
+		}
+		boolean bool1 = ((BoolValue) tos).value();
+		boolean bool2 = ((BoolValue) ntos).value();
+		dataStack.push(new BoolValue(bool1 && bool2));
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>or</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus logicalOr(Instruction currInst) {
+		Datum tos, ntos;
+
+		// Logical or of two booleans.
+
+		tos = dataStack.pop();
+		ntos = dataStack.pop();
+		if (!(tos instanceof BoolValue) || !(ntos instanceof BoolValue)) {
+			dataStack.push(ntos);
+			dataStack.push(tos);
+			error(currInst, Operation.OR, "both operands must be booleans.");
+			return ExitStatus.ABNORMAL;
+		}
+		boolean bool1 = ((BoolValue) tos).value();
+		boolean bool2 = ((BoolValue) ntos).value();
+		dataStack.push(new BoolValue(bool1 || bool2));
+
+		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Performs <code>test exception</code>.
+	 *
+	 * @param currInst
+	 *            the instruction being executed
+	 * @return how the operation finished
+	 */
+	private ExitStatus testException(Instruction currInst) {
+		Datum tos;
+
+		// Test whether the current exception code is the same as
+		// the integer on TOS.
+
+		tos = dataStack.pop();
+		if (!(tos instanceof IntValue)) {
+			dataStack.push(tos);
+			error(currInst, Operation.TEST_EXCEPTION,
+					"operand must be an integer.");
+			return ExitStatus.ABNORMAL;
+		}
+
+		int testValue = ((IntValue) tos).value();
+		boolean pushValue = testValue == currentException;
+
+		dataStack.push(new BoolValue(pushValue));
+
+		return ExitStatus.NORMAL;
+	}
+
 
 	/**
 	 * Make an <code>Object</code> from a <code>String</code>. Because the type
@@ -1137,6 +1411,23 @@ public class PAL {
 			return ExitStatus.ABNORMAL;
 		}
 		return ExitStatus.NORMAL;
+	}
+
+	/**
+	 * Print an error against an <code>OPR</code> operation, naming the
+	 * operation. The instruction below the message says <code>OPR 0 20</code>;
+	 * this says which operation that is.
+	 *
+	 * @param currInst
+	 *            The offending <code>Instruction</code> object.
+	 * @param operation
+	 *            The operation that failed.
+	 * @param message
+	 *            A context-dependent error message to be printed.
+	 */
+	private void error(Instruction currInst, Operation operation, String message) {
+		error(currInst, operation.description() + ": " + message);
+		return;
 	}
 
 	/**

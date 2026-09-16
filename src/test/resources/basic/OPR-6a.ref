@@ -1,6 +1,6 @@
 
 Runtime Error:
-CODE:3:Attempt to divide by zero.
+CODE:3:divide: attempt to divide by zero.
 OPR 0 6
 
 Stack dump:
