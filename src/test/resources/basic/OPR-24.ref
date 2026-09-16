@@ -1,7 +1,7 @@
 
 Runtime Error:
 CODE:3:Stack underflow: the current frame has no value to pop.
-JIF 0 42
+JIF 0 42 -- generate a stack dump, should only have four "0"'s in it.
 
 Stack dump:
 ----------

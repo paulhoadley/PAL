@@ -1,6 +1,7 @@
 package net.logicsquad.pal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -8,10 +9,11 @@ import org.junit.jupiter.api.Test;
 import net.logicsquad.pal.Machines.Run;
 
 /**
- * Tests on the object file parsing done when a machine is constructed. Only
- * covers files that load: the loader still calls <code>System.exit()</code>
- * when it rejects one, so malformed files are covered by
- * {@link NegativeFixtureTest} instead.
+ * Tests on the object file parsing done when a machine is constructed,
+ * including the operand checking #33 moved here from run time. Since #29 the
+ * loader throws rather than calling <code>System.exit()</code>, so a file it
+ * rejects can be examined in process; {@link NegativeFixtureTest} still covers
+ * what such a rejection looks like from the command line.
  *
  * <p>
  * The grammar is in <code>doc/PAL.tex</code>: three whitespace-separated
@@ -108,6 +110,45 @@ public class LoaderTest {
 		// The manual allows LCR to take an integer, promoting it to a real.
 		Run run = Machines.run("LCR 0 3\nOPR 0 20\nJMP 0 0\n");
 		assertEquals("3.0", run.output());
+	}
+
+	@Test
+	public void anOperandOfTheWrongKindIsRefusedBeforeTheProgramRuns() {
+		LoadException e = assertThrows(LoadException.class,
+				() -> Machines.run("LCI 0 1.5\nJMP 0 0\n"));
+		assertEquals(1, e.lineno());
+		assertEquals("LCI takes an integer operand.", e.getMessage());
+	}
+
+	@Test
+	public void eachMnemonicNamesTheOperandItWants() {
+		assertEquals("LCS takes a string operand.",
+				assertThrows(LoadException.class,
+						() -> Machines.run("LCS 0 5\nJMP 0 0\n")).getMessage());
+		assertEquals("LCR takes a real operand.",
+				assertThrows(LoadException.class,
+						() -> Machines.run("LCR 0 'x'\nJMP 0 0\n")).getMessage());
+		assertEquals("OPR takes an integer operand.",
+				assertThrows(LoadException.class,
+						() -> Machines.run("OPR 0 'x'\nJMP 0 0\n")).getMessage());
+	}
+
+	@Test
+	public void aStringOperandLosesItsApostrophesOnceNotOnEveryExecution() {
+		// The delimiters used to survive into the machine and be stripped by
+		// LCS each time it ran.
+		Run run = Machines.run("LCS 0 'it''s'\nOPR 0 20\nJMP 0 0\n");
+		assertEquals("it", run.output(), "the string ends at the second apostrophe");
+		assertTrue(run.normal());
+	}
+
+	@Test
+	public void aFaultNamesTheSourceLineAsWritten() {
+		// Not a reconstruction: the comment and the spacing are the author's.
+		Run run = Machines.run("INC 0 1\nOPR 0 24\nOPR   0   24  -- one pop too many\nJMP 0 0\n");
+		assertTrue(run.output().contains("OPR   0   24  -- one pop too many"),
+				"expected the source line verbatim: " + run.output());
+		assertTrue(!run.normal());
 	}
 
 	@Test

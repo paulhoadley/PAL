@@ -30,7 +30,7 @@ public class PAL {
 	private final int DATASIZE = 500;
 
 	/** Memory for the instructions. */
-	private ArrayList<Code> codeMem;
+	private ArrayList<Instruction> codeMem;
 
 	/** Stack for data. */
 	private DataStack dataStack;
@@ -43,7 +43,7 @@ public class PAL {
 	 * raised in {@link DataStack}, which has no idea what the machine is doing,
 	 * can still be reported against the instruction that provoked it.
 	 */
-	private Code currentInstruction;
+	private Instruction currentInstruction;
 
 	/** Input reader. */
 	private BufferedReader inputReader;
@@ -124,7 +124,7 @@ public class PAL {
 
 	/**
 	 * Constructor. Reads all of the statements in {@link PAL#filename
-	 * <code>filename</code>} into {@link Code <code>Code</code>} objects, and
+	 * <code>filename</code>} into {@link Instruction <code>Instruction</code>} objects, and
 	 * stores these objects in {@link PAL#codeMem <code>codeMem</code>}. The
 	 * lexical analysis of the source file is quite rigid. Any deviation from
 	 * the prescribed format for source files causes the machine to stop.
@@ -155,15 +155,12 @@ public class PAL {
 		this.err = err;
 
 		// Create the code memory.
-		codeMem = new ArrayList<Code>(CODESIZE);
+		codeMem = new ArrayList<Instruction>(CODESIZE);
 		dataStack = new DataStack(DATASIZE);
 
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));
 		int lineno = 1;
 		String line = br.readLine();
-		Mnemonic mnemonic = null;
-		int first = 0;
-		Object second = null;
 		StringTokenizer st;
 
 		while (line != null) {
@@ -177,6 +174,10 @@ public class PAL {
 				continue;
 			}
 
+			Mnemonic mnemonic;
+			int level;
+			String operandText;
+
 			// May not come in groups of three, in which case,
 			// catch the error.
 			try {
@@ -187,34 +188,22 @@ public class PAL {
 							"Unknown mnemonic '" + token + "'.");
 				}
 				mnemonic = parsed.get();
-				first = Integer.parseInt(st.nextToken());
-				String s = st.nextToken();
-				if (s.startsWith("'")) {
-					int start = line.indexOf('\'');
-					int end = line.indexOf('\'', start + 1);
-					if (end < 0) {
-						throw new LoadException(lineno,
-								"Unterminated string literal.");
-					}
-					second = line.substring(start, end + 1);
-				} else {
-					second = makeObject(s);
-					if (second instanceof String) {
-						throw new LoadException(lineno,
-								"Unrecognised second operand.");
-					}
-				}
+				level = Integer.parseInt(st.nextToken());
+				operandText = st.nextToken();
 			} catch (NoSuchElementException e) {
 				throw new LoadException(lineno, "Not enough tokens.");
 			} catch (NumberFormatException e) {
 				throw new LoadException(lineno,
 						"First operand non-integer.");
 			}
+
+			Operand operand = operand(mnemonic, operandText, line, lineno);
+
 			if (codeMem.size() >= CODESIZE) {
 				throw new LoadException(lineno,
 						"Exceeded code storage limit.");
 			}
-			codeMem.add(new Code(mnemonic, first, second, lineno));
+			codeMem.add(new Instruction(mnemonic, level, operand, lineno, line));
 			line = br.readLine();
 			lineno++;
 		}
@@ -256,7 +245,7 @@ public class PAL {
 		// Initialise program counter.
 		pc = 0;
 
-		Code currInst;
+		Instruction currInst;
 
 		while (pc < codeMem.size()) {
 			currInst = codeMem.get(pc);
@@ -265,45 +254,33 @@ public class PAL {
 			// Bump the program counter.
 			pc++;
 
-			// Object to pull out of currInst.second.
-			Object o = currInst.getSecond();
-
 			Datum tos, ntos, returnPoint, loadedVal;
 
-			switch (currInst.getMnemonic()) {
+			switch (currInst.mnemonic()) {
 			case Mnemonic.CAL:
 				// Procedure/function call.
 
 				// Set return point field in stack mark.
-				dataStack.set(dataStack.getTop() - currInst.getFirst() - 2,
+				dataStack.set(dataStack.getTop() - currInst.level() - 2,
 						new IntValue(pc));
 
 				// Set new frame base.
-				dataStack.setBase(dataStack.getTop() - currInst.getFirst());
+				dataStack.setBase(dataStack.getTop() - currInst.level());
 
 				// Jump to procedure/function code. Note that while
 				// the PAL instructions start from 1, our code store
 				// is indexed from 0.
-				pc = ((Integer) currInst.getSecond()).intValue() - 1;
+				pc = currInst.intOperand() - 1;
 
 				break;
 			case Mnemonic.INC:
 				// Push space onto the stack.
 
-				if (!(o instanceof Integer)) {
-					error(currInst, "Argument to INC must be an integer.");
-					return ExitStatus.ABNORMAL;
-				} else {
-					dataStack.incTop(((Integer) o).intValue());
-				}
+				dataStack.incTop(currInst.intOperand());
 				break;
 			case Mnemonic.JIF:
 				// Jump if false.
 
-				if (!(o instanceof Integer)) {
-					error(currInst, "Argument to JIF must be an integer.");
-					return ExitStatus.ABNORMAL;
-				}
 
 				tos = dataStack.pop();
 
@@ -314,7 +291,7 @@ public class PAL {
 				}
 
 				if (!((BoolValue) tos).value()) {
-					int destination = ((Integer) o).intValue();
+					int destination = currInst.intOperand();
 
 					if (destination < 1 || destination > codeMem.size()) {
 						dataStack.push(tos);
@@ -331,12 +308,8 @@ public class PAL {
 			case Mnemonic.JMP:
 				// Unconditional jump.
 
-				if (!(o instanceof Integer)) {
-					error(currInst, "Argument to JMP must be an integer.");
-					return ExitStatus.ABNORMAL;
-				}
 
-				int destination = ((Integer) o).intValue();
+				int destination = currInst.intOperand();
 
 				if (destination == 0) {
 					// "JMP 0 0" signifies program termination.
@@ -356,57 +329,25 @@ public class PAL {
 			case Mnemonic.LCI:
 				// Load an integer constant onto the stack.
 
-				if (!(o instanceof Integer)) {
-					error(currInst, "Argument to LCI must be an integer.");
-					return ExitStatus.ABNORMAL;
-				} else {
-					dataStack.push(new IntValue(((Integer) o).intValue()));
-				}
+				dataStack.push(new IntValue(currInst.intOperand()));
 				break;
 			case Mnemonic.LCR:
 				// Load a real constant onto the stack.
 
-				if (o instanceof Integer) {
-					o = Float.valueOf(((Integer) o).floatValue());
-				}
-
-				if (!(o instanceof Float)) {
-					error(currInst, "Argument to LCR must be a real.");
-					return ExitStatus.ABNORMAL;
-				} else {
-					dataStack.push(new RealValue(((Float) o).floatValue()));
-				}
+				dataStack.push(new RealValue(currInst.realOperand()));
 				break;
 			case Mnemonic.LCS:
 				// Load a string constant onto the stack.
 
-				if (!(o instanceof String)) {
-					error(currInst, "Argument to LCS must be a string.");
-					return ExitStatus.ABNORMAL;
-				} else {
-					if (!(((String) o).startsWith("'") && (((String) o)
-							.endsWith("'")))) {
-						error(currInst,
-								"String must be delimited by single-quotes.");
-						return ExitStatus.ABNORMAL;
-					} else {
-						String oS = (String) o;
-						oS = oS.substring(1, oS.length() - 1);
-						dataStack.push(new StringValue(oS));
-					}
-				}
+				dataStack.push(new StringValue(currInst.stringOperand()));
 				break;
 			case Mnemonic.LDA:
 				// Load the address of a stack location onto the top
 				// of the stack.
 
-				if (!(o instanceof Integer)) {
-					error(currInst, "Argument to LDA must be an integer.");
-					return ExitStatus.ABNORMAL;
-				}
 
-				int address = dataStack.getAddress(currInst.getFirst(),
-						((Integer) o).intValue());
+				int address = dataStack.getAddress(currInst.level(),
+						currInst.intOperand());
 
 				dataStack.push(new IntValue(address));
 
@@ -433,13 +374,9 @@ public class PAL {
 				// Load a value from elsewhere in the stack onto the
 				// top.
 
-				if (!(o instanceof Integer)) {
-					error(currInst, "Argument to LDV must be an integer");
-					return ExitStatus.ABNORMAL;
-				}
 
-				loadedVal = dataStack.get(currInst.getFirst(),
-						((Integer) o).intValue());
+				loadedVal = dataStack.get(currInst.level(),
+						currInst.intOperand());
 
 				dataStack.push(loadedVal);
 
@@ -455,7 +392,7 @@ public class PAL {
 				// Mark the stack in preparation for a
 				// procedure/function call.
 
-				int staticLink = dataStack.getAddress(currInst.getFirst(), 0);
+				int staticLink = dataStack.getAddress(currInst.level(), 0);
 				int dynamicLink = dataStack.getAddress(0, 0);
 
 				dataStack.markStack(staticLink, dynamicLink);
@@ -484,8 +421,8 @@ public class PAL {
 					}
 					int intVal = Integer.parseInt(intLine);
 					// Put the val in the stack.
-					dataStack.set(dataStack.getAddress(currInst.getFirst(),
-							((Integer) o).intValue()), new IntValue(intVal));
+					dataStack.set(dataStack.getAddress(currInst.level(),
+							currInst.intOperand()), new IntValue(intVal));
 				} catch (IOException e1) {
 					err.println(e1);
 				} catch (NumberFormatException e2) {
@@ -513,8 +450,8 @@ public class PAL {
 					}
 					float realVal = Float.parseFloat(realLine);
 					// Put the val in the stack.
-					dataStack.set(dataStack.getAddress(currInst.getFirst(),
-							((Integer) o).intValue()), new RealValue(realVal));
+					dataStack.set(dataStack.getAddress(currInst.level(),
+							currInst.intOperand()), new RealValue(realVal));
 				} catch (IOException e1) {
 					err.println(e1);
 				} catch (NumberFormatException e2) {
@@ -529,15 +466,11 @@ public class PAL {
 				// Register an exception handler with the current
 				// stack mark.
 
-				if (!(o instanceof Integer)) {
-					error(currInst, "Argument to REH must be an integer.");
-					return ExitStatus.ABNORMAL;
-				}
 
 				// Get the location of the exception handler pointer
 				// in the highest stack mark.
 				dataStack.set(dataStack.getAddress(0, -1),
-						new IntValue(((Integer) o).intValue()));
+						new IntValue(currInst.intOperand()));
 
 				break;
 			case Mnemonic.SIG:
@@ -545,12 +478,8 @@ public class PAL {
 				// code), re-raise the current exception. Otherwise,
 				// raise the exception specified by the argument.
 
-				if (!(o instanceof Integer)) {
-					error(currInst, "Argument to SIG must be an integer.");
-					return ExitStatus.ABNORMAL;
-				}
 
-				int excType = ((Integer) o).intValue();
+				int excType = currInst.intOperand();
 				if (excType != reraise) {
 					currentException = excType;
 				} else {
@@ -592,15 +521,11 @@ public class PAL {
 				// Store the value on top of the stack in the location
 				// indicated.
 
-				if (!(o instanceof Integer)) {
-					error(currInst, "Argument to STO must be an integer.");
-					return ExitStatus.ABNORMAL;
-				}
 
 				tos = dataStack.pop();
 
-				dataStack.set(dataStack.getAddress(currInst.getFirst(),
-						((Integer) o).intValue()), tos);
+				dataStack.set(dataStack.getAddress(currInst.level(),
+						currInst.intOperand()), tos);
 
 				break;
 			}
@@ -618,18 +543,12 @@ public class PAL {
 	 * method.
 	 * 
 	 * @param currInst
-	 *            The current <code>Code</code> object to be executed. If it
+	 *            The current <code>Instruction</code> object to be executed. If it
 	 *            reaches here, that object contains an <code>OPR</code>
 	 *            mnemonic.
 	 */
-	public ExitStatus doOperation(Code currInst) {
-		Object o = currInst.getSecond();
-		int opr;
-		if (!(o instanceof Integer)) {
-			error(currInst, "Argument to OPR must be an integer.");
-			return ExitStatus.ABNORMAL;
-		}
-		opr = ((Integer) o).intValue();
+	public ExitStatus doOperation(Instruction currInst) {
+		int opr = currInst.intOperand();
 		if (opr < 0 || opr > 31) {
 			error(currInst, "Argument to OPR must be in range 0-31.");
 			return ExitStatus.ABNORMAL;
@@ -1107,20 +1026,38 @@ public class PAL {
 	 * @return An <code>Object</code> which is either a <code>String,</code>
 	 *         <code>Integer</code> or <code>Float</code>.
 	 */
-	private Object makeObject(String input) {
-		// We are expecting an integer, real or string.
-		Object output;
-		try {
-			output = Integer.valueOf(input);
-			return output;
-		} catch (NumberFormatException e1) {
+	private static Operand operand(Mnemonic mnemonic, String token, String line,
+			int lineno) {
+		return switch (mnemonic.kind()) {
+		case STRING -> {
+			if (!token.startsWith("'")) {
+				throw new LoadException(lineno,
+						mnemonic + " takes a string operand.");
+			}
+			int start = line.indexOf('\'');
+			int end = line.indexOf('\'', start + 1);
+			if (end < 0) {
+				throw new LoadException(lineno, "Unterminated string literal.");
+			}
+			yield new StringOperand(line.substring(start + 1, end));
+		}
+		case REAL -> {
 			try {
-				output = Float.valueOf(input);
-				return output;
-			} catch (NumberFormatException e2) {
-				return input;
+				yield new RealOperand(Float.parseFloat(token));
+			} catch (NumberFormatException e) {
+				throw new LoadException(lineno,
+						mnemonic + " takes a real operand.");
 			}
 		}
+		case INTEGER -> {
+			try {
+				yield new IntOperand(Integer.parseInt(token));
+			} catch (NumberFormatException e) {
+				throw new LoadException(lineno,
+						mnemonic + " takes an integer operand.");
+			}
+		}
+		};
 	}
 
 	/**
@@ -1133,10 +1070,10 @@ public class PAL {
 	 * terminates. All other exceptions are treated equally.
 	 * 
 	 * @param currInst
-	 *            The <code>Code</code> object which caused the exception. Used
+	 *            The <code>Instruction</code> object which caused the exception. Used
 	 *            to add information to error messages.
 	 */
-	private ExitStatus raiseException(Code currInst) {
+	private ExitStatus raiseException(Instruction currInst) {
 		// The Program Abort signal cannot be caught.
 		if (currentException == programAbort) {
 			error(currInst, "A Program Abort signal was raised.");
@@ -1208,15 +1145,15 @@ public class PAL {
 	 * the stack.
 	 * 
 	 * @param currInst
-	 *            The offending <code>Code</code> object.
+	 *            The offending <code>Instruction</code> object.
 	 * @param s
 	 *            A context-dependent error message to be printed.
 	 */
-	private void error(Code currInst, String s) {
+	private void error(Instruction currInst, String s) {
 		// Ensure the error is always started on a new line.
 		err.println();
 		err.println("Runtime Error:");
-		err.println(filename + ":" + currInst.getLineNo() + ":" + s);
+		err.println(filename + ":" + currInst.lineno() + ":" + s);
 		err.println(currInst);
 		err.println("\nStack dump:");
 		err.println("----------");

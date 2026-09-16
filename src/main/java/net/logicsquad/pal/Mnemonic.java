@@ -14,97 +14,146 @@ enum Mnemonic {
 	/**
 	 * <code>CAL</code>
 	 */
-	CAL,
+	CAL(Kind.INTEGER),
 
 	/**
 	 * <code>INC</code>
 	 */
-	INC,
+	INC(Kind.INTEGER),
 
 	/**
 	 * <code>JIF</code>
 	 */
-	JIF,
+	JIF(Kind.INTEGER),
 
 	/**
 	 * <code>JMP</code>
 	 */
-	JMP,
+	JMP(Kind.INTEGER),
 
 	/**
 	 * <code>LCI</code>
 	 */
-	LCI,
+	LCI(Kind.INTEGER),
 
 	/**
 	 * <code>LCR</code>
 	 */
-	LCR,
+	LCR(Kind.REAL),
 
 	/**
 	 * <code>LCS</code>
 	 */
-	LCS,
+	LCS(Kind.STRING),
 
 	/**
 	 * <code>LDA</code>
 	 */
-	LDA,
+	LDA(Kind.INTEGER),
 
 	/**
 	 * <code>LDI</code>
 	 */
-	LDI,
+	LDI(Kind.INTEGER),
 
 	/**
 	 * <code>LDU</code>
 	 */
-	LDU,
+	LDU(Kind.INTEGER),
 
 	/**
 	 * <code>LDV</code>
 	 */
-	LDV,
+	LDV(Kind.INTEGER),
 
 	/**
 	 * <code>MST</code>
 	 */
-	MST,
+	MST(Kind.INTEGER),
 
 	/**
 	 * <code>OPR</code>
 	 */
-	OPR,
+	OPR(Kind.INTEGER),
 
 	/**
 	 * <code>RDI</code>
 	 */
-	RDI,
+	RDI(Kind.INTEGER),
 
 	/**
 	 * <code>RDR</code>
 	 */
-	RDR,
+	RDR(Kind.INTEGER),
 
 	/**
 	 * <code>REH</code>
 	 */
-	REH,
+	REH(Kind.INTEGER),
 
 	/**
 	 * <code>SIG</code>
 	 */
-	SIG,
+	SIG(Kind.INTEGER),
 
 	/**
 	 * <code>STI</code>
 	 */
-	STI,
+	STI(Kind.INTEGER),
 
 	/**
 	 * <code>STO</code>
 	 */
-	STO;
+	STO(Kind.INTEGER);
+
+	/**
+	 * The kind of operand a mnemonic takes.
+	 *
+	 * <p>
+	 * Every mnemonic takes an integer but two. <code>LCS</code> takes a string,
+	 * and <code>LCR</code> a real, though it accepts an integer literal and
+	 * promotes it.
+	 *
+	 * <p>
+	 * The jump and call instructions take what the manual calls an address.
+	 * That is an integer here, not a kind of its own: an address is only
+	 * checkable against the size of the code store, which is not known until
+	 * loading finishes, so those stay the run time checks they have always
+	 * been.
+	 */
+	enum Kind {
+		/** An integer. */
+		INTEGER,
+
+		/** A real, or an integer literal to promote. */
+		REAL,
+
+		/** A string, delimited by apostrophes. */
+		STRING
+	}
+
+	/** The kind of operand this mnemonic takes. */
+	private final Kind kind;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param kind
+	 *            the kind of operand this mnemonic takes
+	 */
+	Mnemonic(Kind kind) {
+		this.kind = kind;
+		return;
+	}
+
+	/**
+	 * Returns the kind of operand this mnemonic takes.
+	 *
+	 * @return the kind of operand this mnemonic takes
+	 */
+	Kind kind() {
+		return kind;
+	}
 
 	/**
 	 * Mnemonics by name, supporting {@link #from(String)}.
