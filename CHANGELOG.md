@@ -3,6 +3,52 @@
 This project adheres to [Semantic
 Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Release 0.7 (2026-09-16)
+Structure. The machine is modelled in the language's own terms rather than
+in tagged integers and `Object`s, and the single 1,258-line class it all
+lived in is now a loader, a machine and a command line. No program that
+ran before runs differently.
+
+Diagnostics do change, so anything reading them should expect different
+text. A fault in an `OPR` operation names the operation, an operand of
+the wrong kind is refused before the program runs rather than partway
+through it, and the instruction shown beneath a runtime error is the
+source line as written, comment and all, rather than a reconstruction.
+
+### Changed
+- Values on the data stack are a sealed `Datum` type with a record per
+  kind, immutable, in cells that are not. This removes every cast against
+  a stack value, and the hand-written `clone()` that copying them needed.
+  [#32](https://github.com/paulhoadley/pal/issues/32)
+- Each mnemonic declares the kind of operand it takes, so the loader
+  parses it once and the interpreter no longer opens every instruction by
+  checking what it got.
+  [#33](https://github.com/paulhoadley/pal/issues/33)
+- The 32 `OPR` operations have names. `doOperation` is an exhaustive
+  switch over them dispatching to one method per operation or family,
+  rather than a 490-line switch on a raw number.
+  [#34](https://github.com/paulhoadley/pal/issues/34)
+- The loader, the machine and the command line are separate classes.
+  Only the command line decides to stop the JVM, and the name of the file
+  being run is no longer a property of the whole process.
+  [#35](https://github.com/paulhoadley/pal/issues/35)
+- Javadoc lint is back on, having been suppressed since the POM was
+  retrofitted, along with a pass of source tidying and an `.editorconfig`.
+  [#36](https://github.com/paulhoadley/pal/issues/36)
+
+### Fixed
+- An operand of the wrong kind is reported with its line number before
+  the program runs, and the message names the mnemonic and what it
+  wanted.
+  [#33](https://github.com/paulhoadley/pal/issues/33)
+- A fault in an `OPR` operation names the operation, so a reader need not
+  look the number up.
+  [#34](https://github.com/paulhoadley/pal/issues/34)
+- The instruction shown with a runtime error is the line as written. A
+  real operand used to appear as the parsed `float` rather than as typed,
+  and comments and spacing were lost.
+  [#33](https://github.com/paulhoadley/pal/issues/33)
+
 ## Release 0.6 (2026-09-16)
 Error handling. A PAL program can no longer make the machine emit a raw
 JVM exception, and several faults that were reported as something else,
