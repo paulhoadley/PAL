@@ -164,10 +164,6 @@ public class PAL {
 			StringTokenizer st;
 
 			while (line != null) {
-				if (lineno > CODESIZE) {
-					throw new LoadException(lineno,
-							"Exceeded code storage limit.");
-				}
 				st = new StringTokenizer(line);
 
 				// It seems reasonable to allow blank lines in the
@@ -210,6 +206,10 @@ public class PAL {
 				} catch (NumberFormatException e) {
 					throw new LoadException(lineno,
 							"First operand non-integer.");
+				}
+				if (codeMem.size() >= CODESIZE) {
+					throw new LoadException(lineno,
+							"Exceeded code storage limit.");
 				}
 				codeMem.add(new Code(mnemonic, first, second, lineno));
 				line = br.readLine();

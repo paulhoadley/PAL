@@ -58,15 +58,15 @@ final class DataStack {
 	 *                if there is insufficient free stack space.
 	 */
 	public void push(Data datum) {
+		if (maxSize != 0 && top + 1 > maxSize) {
+			throw MachineFault.stackOverflow(maxSize);
+		}
+
 		top++;
 
 		data.add(datum);
 
-		if (maxSize == 0 || top < maxSize) {
-			return;
-		}
-
-		throw MachineFault.stackOverflow(maxSize);
+		return;
 	}
 
 	/**

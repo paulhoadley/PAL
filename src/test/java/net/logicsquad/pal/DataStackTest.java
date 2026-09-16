@@ -137,24 +137,28 @@ public class DataStackTest {
 	}
 
 	/**
-	 * Documents the inconsistency between the two ways of growing the stack.
-	 * {@code incTop} checks before it grows and so reaches the configured
-	 * size, while {@code push} appends first and only then complains, so it
-	 * stops one short and leaves the datum behind. #30 makes them agree.
+	 * The two ways of growing the stack now agree on where the limit is, and
+	 * both check before they grow. Before #30, {@code push} appended first and
+	 * complained afterwards, so it stopped one short of the configured size
+	 * and left the rejected datum on the stack.
 	 */
 	@Test
-	public void pushAndIncTopDisagreeAboutTheLimit() {
+	public void pushAndIncTopAgreeAboutTheLimit() {
 		DataStack byIncTop = new DataStack(10);
 		byIncTop.incTop(10 - MARK_SIZE);
 		assertEquals(10, byIncTop.getTop(), "incTop reaches the limit exactly");
+		assertThrows(MachineFault.class, () -> byIncTop.incTop(1),
+				"and goes no further");
 
 		DataStack byPush = new DataStack(10);
-		assertThrows(MachineFault.class, () -> {
-			for (int i = 0; i < 10; i++) {
-				byPush.push(new Data(Data.INT, Integer.valueOf(i)));
-			}
-		});
-		assertEquals(10, byPush.getTop(), "push throws only after growing, see #30");
+		for (int i = MARK_SIZE; i < 10; i++) {
+			byPush.push(new Data(Data.INT, Integer.valueOf(i)));
+		}
+		assertEquals(10, byPush.getTop(), "push reaches the same limit");
+		assertThrows(MachineFault.class,
+				() -> byPush.push(new Data(Data.INT, Integer.valueOf(0))),
+				"and goes no further");
+		assertEquals(10, byPush.getTop(), "a refused push leaves the stack alone");
 	}
 
 	@Test
