@@ -147,7 +147,6 @@
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
-          <additionalJOption>-Xdoclint:none</additionalJOption>
           <detectLinks />
           <show>private</show>
         </configuration>

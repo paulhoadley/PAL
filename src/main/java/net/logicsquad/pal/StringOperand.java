@@ -5,7 +5,7 @@ package net.logicsquad.pal;
  *
  * <p>
  * The loader strips them, where the machine used to carry them through to
- * <code>LCS</code> and strip them at run time on every execution.
+ * {@code LCS} and strip them at run time on every execution.
  *
  * @param value
  *            the value

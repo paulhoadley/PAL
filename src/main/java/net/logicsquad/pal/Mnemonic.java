@@ -12,97 +12,97 @@ import java.util.Optional;
  */
 enum Mnemonic {
 	/**
-	 * <code>CAL</code>
+	 * {@code CAL}
 	 */
 	CAL(Kind.INTEGER),
 
 	/**
-	 * <code>INC</code>
+	 * {@code INC}
 	 */
 	INC(Kind.INTEGER),
 
 	/**
-	 * <code>JIF</code>
+	 * {@code JIF}
 	 */
 	JIF(Kind.INTEGER),
 
 	/**
-	 * <code>JMP</code>
+	 * {@code JMP}
 	 */
 	JMP(Kind.INTEGER),
 
 	/**
-	 * <code>LCI</code>
+	 * {@code LCI}
 	 */
 	LCI(Kind.INTEGER),
 
 	/**
-	 * <code>LCR</code>
+	 * {@code LCR}
 	 */
 	LCR(Kind.REAL),
 
 	/**
-	 * <code>LCS</code>
+	 * {@code LCS}
 	 */
 	LCS(Kind.STRING),
 
 	/**
-	 * <code>LDA</code>
+	 * {@code LDA}
 	 */
 	LDA(Kind.INTEGER),
 
 	/**
-	 * <code>LDI</code>
+	 * {@code LDI}
 	 */
 	LDI(Kind.INTEGER),
 
 	/**
-	 * <code>LDU</code>
+	 * {@code LDU}
 	 */
 	LDU(Kind.INTEGER),
 
 	/**
-	 * <code>LDV</code>
+	 * {@code LDV}
 	 */
 	LDV(Kind.INTEGER),
 
 	/**
-	 * <code>MST</code>
+	 * {@code MST}
 	 */
 	MST(Kind.INTEGER),
 
 	/**
-	 * <code>OPR</code>
+	 * {@code OPR}
 	 */
 	OPR(Kind.INTEGER),
 
 	/**
-	 * <code>RDI</code>
+	 * {@code RDI}
 	 */
 	RDI(Kind.INTEGER),
 
 	/**
-	 * <code>RDR</code>
+	 * {@code RDR}
 	 */
 	RDR(Kind.INTEGER),
 
 	/**
-	 * <code>REH</code>
+	 * {@code REH}
 	 */
 	REH(Kind.INTEGER),
 
 	/**
-	 * <code>SIG</code>
+	 * {@code SIG}
 	 */
 	SIG(Kind.INTEGER),
 
 	/**
-	 * <code>STI</code>
+	 * {@code STI}
 	 */
 	STI(Kind.INTEGER),
 
 	/**
-	 * <code>STO</code>
+	 * {@code STO}
 	 */
 	STO(Kind.INTEGER);
 
@@ -110,8 +110,8 @@ enum Mnemonic {
 	 * The kind of operand a mnemonic takes.
 	 *
 	 * <p>
-	 * Every mnemonic takes an integer but two. <code>LCS</code> takes a string,
-	 * and <code>LCR</code> a real, though it accepts an integer literal and
+	 * Every mnemonic takes an integer but two. {@code LCS} takes a string,
+	 * and {@code LCR} a real, though it accepts an integer literal and
 	 * promotes it.
 	 *
 	 * <p>
@@ -143,7 +143,6 @@ enum Mnemonic {
 	 */
 	Mnemonic(Kind kind) {
 		this.kind = kind;
-		return;
 	}
 
 	/**
@@ -167,15 +166,15 @@ enum Mnemonic {
 	}
 
 	/**
-	 * Returns the <code>Mnemonic</code> named by <code>token</code>, if there
+	 * Returns the {@code Mnemonic} named by {@code token}, if there
 	 * is one. Unlike {@link #valueOf(String)}, an unrecognised token is not an
 	 * exceptional condition: object files are user input, so the caller is
 	 * expected to report the problem against the offending line.
 	 *
 	 * @param token
 	 *            a candidate mnemonic, as it appears in an object file
-	 * @return the matching <code>Mnemonic</code>, or an empty
-	 *         <code>Optional</code> if <code>token</code> does not name one
+	 * @return the matching {@code Mnemonic}, or an empty
+	 *         {@code Optional} if {@code token} does not name one
 	 */
 	static Optional<Mnemonic> from(String token) {
 		return Optional.ofNullable(LOOKUP.get(token));

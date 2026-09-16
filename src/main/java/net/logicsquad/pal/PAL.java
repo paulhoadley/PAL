@@ -12,11 +12,11 @@ import java.io.PrintStream;
  *
  * <p>
  * Deciding to stop the JVM happens here and nowhere else. The loader throws and
- * the machine returns; neither of them calls <code>System.exit()</code>, which
+ * the machine returns; neither of them calls {@code System.exit()}, which
  * is what lets both be driven from a test.
  *
  * <p>
- * The class keeps its name because it is what <code>java -jar</code> invokes.
+ * The class keeps its name because it is what {@code java -jar} invokes.
  *
  * @author Philip Roberts &lt;philip.roberts@gmail.com&gt;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
@@ -24,6 +24,11 @@ import java.io.PrintStream;
 public class PAL {
 	/** The object file to run when none is named. */
 	private static final String DEFAULT_FILENAME = "CODE";
+
+	/** No instances. */
+	private PAL() {
+		throw new AssertionError("Not instantiable.");
+	}
 
 	/**
 	 * Main method for command line operation.
@@ -67,6 +72,5 @@ public class PAL {
 	 */
 	private static void usage(PrintStream stream) {
 		stream.println("usage: java -jar PAL.jar [filename]");
-		return;
 	}
 }

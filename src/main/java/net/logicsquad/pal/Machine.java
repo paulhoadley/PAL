@@ -22,7 +22,7 @@ import java.util.Optional;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
 final class Machine {
-	/** A constant for data stack size limit. */
+	/** How many words the data stack holds unless told otherwise. */
 	static final int DATASIZE = 500;
 
 	/** The program being run. */
@@ -58,10 +58,16 @@ final class Machine {
 	/** The number of the present exception. */
 	private int currentException;
 
-	/** Constants representing the predefined exception types. */
+	/** Predefined exception type: re-raise the current exception. */
 	private static final int reraise = 0;
+
+	/** Predefined exception type: program abort, which cannot be caught. */
 	private static final int programAbort = 1;
+
+	/** Predefined exception type: a value was not of the expected type. */
 	private static final int typeMismatch = 3;
+
+	/** Predefined exception type: input reached end of file. */
 	private static final int reachedEOF = 4;
 
 	/**
@@ -77,11 +83,30 @@ final class Machine {
 	 *            stream for runtime diagnostics
 	 */
 	Machine(Program program, InputStream in, PrintStream out, PrintStream err) {
+		this(program, in, out, err, DATASIZE);
+	}
+
+	/**
+	 * Constructor, with a data stack of a given size.
+	 *
+	 * @param program
+	 *            the program to run
+	 * @param in
+	 *            stream the running program reads from
+	 * @param out
+	 *            stream the running program writes to
+	 * @param err
+	 *            stream for runtime diagnostics
+	 * @param dataSize
+	 *            how many words the data stack holds
+	 */
+	Machine(Program program, InputStream in, PrintStream out, PrintStream err,
+			int dataSize) {
 		this.program = program;
 		this.out = out;
 		this.err = err;
 
-		dataStack = new DataStack(DATASIZE);
+		dataStack = new DataStack(dataSize);
 
 		pushBack = new PushbackReader(
 				new InputStreamReader(in, StandardCharsets.UTF_8));
@@ -91,15 +116,16 @@ final class Machine {
 		inputReader = new BufferedReader(pushBack, 1);
 
 		currentException = 0;
-
-		return;
 	}
 
 	/**
 	 * Execute the instructions in the machine's code memory. The instructions
-	 * are implemented in accordance with the specification found here: <a
-	 * href="http://www.cs.adelaide.edu.au/users/third/cc/handouts/pal.pdf">The
-	 * PAL Machine</a>.
+	 * are implemented in accordance with the specification in
+	 * {@code doc/PAL.tex}, which is this project's copy of the handout the
+	 * machine was written against; the University of Adelaide URL it used to
+	 * cite has long since gone.
+	 *
+	 * @return how the program finished
 	 */
 	ExitStatus execute() {
 		try {
@@ -112,7 +138,7 @@ final class Machine {
 
 	/**
 	 * Run the loaded program, leaving any {@link MachineFault} to
-	 * {@link PAL#execute()} to report.
+	 * {@link Machine#execute()} to report.
 	 *
 	 * @return how the program finished
 	 */
@@ -412,17 +438,15 @@ final class Machine {
 	}
 
 	/**
-	 * Perform the operation referenced by an <code>OPR</code> instruction. This
-	 * method is provided separately to {@link PAL#execute <code>execute</code>}
-	 * to avoid placing the rather lengthy <code>switch</code> statement in that
-	 * method.
-	 * 
+	 * Perform the operation referenced by an {@code OPR} instruction, which
+	 * {@link Machine#run()} dispatches here.
+	 *
 	 * @param currInst
-	 *            The current <code>Instruction</code> object to be executed. If it
-	 *            reaches here, that object contains an <code>OPR</code>
-	 *            mnemonic.
+	 *            The current {@link Instruction} to be executed. If it reaches
+	 *            here, that instruction carries an {@code OPR} mnemonic.
+	 * @return how the operation finished
 	 */
-	public ExitStatus doOperation(Instruction currInst) {
+	private ExitStatus doOperation(Instruction currInst) {
 		Optional<Operation> resolved = Operation.fromCode(currInst.intOperand());
 		if (resolved.isEmpty()) {
 			error(currInst, "Argument to OPR must be in range 0-31.");
@@ -461,7 +485,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>procedure return</code>.
+	 * Performs {@code procedure return}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -490,7 +514,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>function return</code>.
+	 * Performs {@code function return}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -524,7 +548,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>negate</code>.
+	 * Performs {@code negate}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -552,7 +576,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>add, subtract, multiply, divide</code>.
+	 * Performs {@code add, subtract, multiply, divide}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -646,7 +670,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>power</code>.
+	 * Performs {@code power}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -685,7 +709,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>concatenate</code>.
+	 * Performs {@code concatenate}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -713,7 +737,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>odd</code>.
+	 * Performs {@code odd}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -742,7 +766,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>equal, not equal, less, greater or equal, greater, less or equal</code>.
+	 * Performs {@code equal, not equal, less, greater or equal, greater, less or equal}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -826,7 +850,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>not</code>.
+	 * Performs {@code not}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -852,7 +876,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>true</code>.
+	 * Performs {@code true}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -867,7 +891,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>false</code>.
+	 * Performs {@code false}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -882,7 +906,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>at eof</code>.
+	 * Performs {@code at eof}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -907,7 +931,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>print</code>.
+	 * Performs {@code print}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -932,7 +956,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>newline</code>.
+	 * Performs {@code newline}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -947,7 +971,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>swap</code>.
+	 * Performs {@code swap}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -967,7 +991,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>duplicate</code>.
+	 * Performs {@code duplicate}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -985,7 +1009,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>discard</code>.
+	 * Performs {@code discard}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -1000,7 +1024,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>int to real</code>.
+	 * Performs {@code int to real}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -1020,7 +1044,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>real to int</code>.
+	 * Performs {@code real to int}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -1040,7 +1064,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>int to string</code>.
+	 * Performs {@code int to string}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -1059,7 +1083,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>real to string</code>.
+	 * Performs {@code real to string}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -1078,7 +1102,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>and</code>.
+	 * Performs {@code and}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -1105,7 +1129,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>or</code>.
+	 * Performs {@code or}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -1132,7 +1156,7 @@ final class Machine {
 	}
 
 	/**
-	 * Performs <code>test exception</code>.
+	 * Performs {@code test exception}.
 	 *
 	 * @param currInst
 	 *            the instruction being executed
@@ -1164,14 +1188,14 @@ final class Machine {
 	 * Raise an exception - look down through stack frames for an exception
 	 * handler.
 	 * 
-	 * This method uses the {@link PAL#currentException
-	 * <code>currentException</code>} variable to determine which exception to
-	 * raise. Exception 1 (Program Abort) cannot be caught, so the program just
-	 * terminates. All other exceptions are treated equally.
-	 * 
+	 * This method uses {@link Machine#currentException} to determine which
+	 * exception to raise. Exception 1 (Program Abort) cannot be caught, so the
+	 * program just terminates. All other exceptions are treated equally.
+	 *
 	 * @param currInst
-	 *            The <code>Instruction</code> object which caused the exception. Used
-	 *            to add information to error messages.
+	 *            The {@link Instruction} which caused the exception. Used to
+	 *            add information to error messages.
+	 * @return how the raise finished
 	 */
 	private ExitStatus raiseException(Instruction currInst) {
 		// The Program Abort signal cannot be caught.
@@ -1240,12 +1264,12 @@ final class Machine {
 	}
 
 	/**
-	 * Print an error against an <code>OPR</code> operation, naming the
-	 * operation. The instruction below the message says <code>OPR 0 20</code>;
+	 * Print an error against an {@code OPR} operation, naming the
+	 * operation. The instruction below the message says {@code OPR 0 20};
 	 * this says which operation that is.
 	 *
 	 * @param currInst
-	 *            The offending <code>Instruction</code> object.
+	 *            The offending {@code Instruction} object.
 	 * @param operation
 	 *            The operation that failed.
 	 * @param message
@@ -1253,7 +1277,6 @@ final class Machine {
 	 */
 	private void error(Instruction currInst, Operation operation, String message) {
 		error(currInst, operation.description() + ": " + message);
-		return;
 	}
 
 	/**
@@ -1262,7 +1285,7 @@ final class Machine {
 	 * the stack.
 	 * 
 	 * @param currInst
-	 *            The offending <code>Instruction</code> object.
+	 *            The offending {@code Instruction} object.
 	 * @param s
 	 *            A context-dependent error message to be printed.
 	 */
@@ -1275,6 +1298,5 @@ final class Machine {
 		err.println("\nStack dump:");
 		err.println("----------");
 		err.print(dataStack);
-		return;
 	}
 }

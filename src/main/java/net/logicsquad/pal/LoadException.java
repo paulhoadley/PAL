@@ -13,6 +13,7 @@ package net.logicsquad.pal;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
 final class LoadException extends PALException {
+	/** Serialisation version. */
 	private static final long serialVersionUID = 1L;
 
 	/** The source line carrying the fault. */
@@ -29,7 +30,6 @@ final class LoadException extends PALException {
 	LoadException(int lineno, String message) {
 		super(message);
 		this.lineno = lineno;
-		return;
 	}
 
 	/**

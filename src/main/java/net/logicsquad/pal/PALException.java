@@ -5,7 +5,7 @@ package net.logicsquad.pal;
  *
  * <p>
  * The distinction this hierarchy draws is between a fault in the program being
- * run and a bug in the simulator running it. A <code>PALException</code> always
+ * run and a bug in the simulator running it. A {@code PALException} always
  * means the former: the object file was malformed, or the program did something
  * the machine forbids. Anything else propagating out of the machine is the
  * latter, and is left alone so that it surfaces as the stack trace it is,
@@ -21,6 +21,7 @@ package net.logicsquad.pal;
  */
 abstract sealed class PALException extends RuntimeException
 		permits LoadException, MachineFault {
+	/** Serialisation version. */
 	private static final long serialVersionUID = 1L;
 
 	/**
@@ -31,6 +32,5 @@ abstract sealed class PALException extends RuntimeException
 	 */
 	PALException(String message) {
 		super(message);
-		return;
 	}
 }

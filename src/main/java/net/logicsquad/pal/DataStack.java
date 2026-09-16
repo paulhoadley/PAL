@@ -54,10 +54,10 @@ final class DataStack {
 	 * 
 	 * @param datum
 	 *            the value to push onto the stack.
-	 * @exception MachineFault
+	 * @throws MachineFault
 	 *                if there is insufficient free stack space.
 	 */
-	public void push(Datum datum) {
+	void push(Datum datum) {
 		if (maxSize != 0 && top + 1 > maxSize) {
 			throw MachineFault.stackOverflow(maxSize);
 		}
@@ -65,18 +65,16 @@ final class DataStack {
 		top++;
 
 		data.add(datum);
-
-		return;
 	}
 
 	/**
 	 * Pop the top value from the stack.
 	 * 
 	 * @return The value removed from the top of the stack.
-	 * @exception MachineFault
+	 * @throws MachineFault
 	 *                if the current frame holds no value to pop.
 	 */
-	public Datum pop() {
+	Datum pop() {
 		if (top <= frameBase) {
 			throw MachineFault.stackUnderflow();
 		}
@@ -88,10 +86,10 @@ final class DataStack {
 	 * Peek at the top of the stack.
 	 * 
 	 * @return The value remaining on the top of the stack.
-	 * @exception MachineFault
+	 * @throws MachineFault
 	 *                if the current frame holds no value to peek at.
 	 */
-	public Datum peek() {
+	Datum peek() {
 		if (top <= frameBase) {
 			throw MachineFault.stackUnderflow();
 		}
@@ -106,19 +104,17 @@ final class DataStack {
 	 * This is how the machine dismantles a frame when returning from a call or
 	 * searching for an exception handler, and it is deliberately not
 	 * {@link DataStack#pop()}: those callers must go below the current frame
-	 * base, which is exactly what <code>pop()</code> refuses to do. Keeping the
+	 * base, which is exactly what {@code pop()} refuses to do. Keeping the
 	 * two apart is what lets a pop too many be caught as the program error it
 	 * is, rather than quietly eating the frame's mark.
 	 *
 	 * @param address
 	 *            the address to unwind to
 	 */
-	public void unwind(int address) {
+	void unwind(int address) {
 		while (top > address) {
 			data.remove(--top);
 		}
-
-		return;
 	}
 
 	/**
@@ -128,10 +124,10 @@ final class DataStack {
 	 * @param address
 	 *            The absolute address for the target location.
 	 * @return The value at the target location.
-	 * @exception MachineFault
+	 * @throws MachineFault
 	 *                if the supplied address is out of bounds.
 	 */
-	public Datum get(int address) {
+	Datum get(int address) {
 		if (address < 0 || address >= top) {
 			throw MachineFault.badAddress(address);
 		}
@@ -150,10 +146,10 @@ final class DataStack {
 	 * @param offset
 	 *            The offset into the target stack frame.
 	 * @return The value at the target address.
-	 * @exception MachineFault
+	 * @throws MachineFault
 	 *                if the supplied address is out of bounds.
 	 */
-	public Datum get(int levelDiff, int offset) {
+	Datum get(int levelDiff, int offset) {
 		int address = getAddress(levelDiff, offset);
 
 		return get(address);
@@ -172,17 +168,15 @@ final class DataStack {
 	 *            The absolute address for the target location.
 	 * @param datum
 	 *            The value to store there.
-	 * @exception MachineFault
+	 * @throws MachineFault
 	 *                if the supplied address is out of bounds.
 	 */
-	public void set(int address, Datum datum) {
+	void set(int address, Datum datum) {
 		if (address < 0 || address >= top) {
 			throw MachineFault.badAddress(address);
 		}
 
 		data.set(address, datum);
-
-		return;
 	}
 
 	/**
@@ -191,11 +185,11 @@ final class DataStack {
 	 * 
 	 * @param amount
 	 *            The number of location to advance the TOS pointer.
-	 * @exception MachineFault
+	 * @throws MachineFault
 	 *                if an attempt is made to advance the TOS pointer beyond
 	 *                the limit of the stack memory.
 	 */
-	public void incTop(int amount) {
+	void incTop(int amount) {
 		if ((maxSize != 0) && (amount + top > maxSize)) {
 			throw MachineFault.stackOverflow(maxSize);
 		}
@@ -215,11 +209,11 @@ final class DataStack {
 	 * @param dynamicLink
 	 *            A pointer to the activation record one level below the current
 	 *            level in terms of <em>dynamic scope</em>.
-	 * @exception MachineFault
+	 * @throws MachineFault
 	 *                if the TOS pointer is advanced beyond the limit of stack
 	 *                memory.
 	 */
-	public void markStack(int staticLink, int dynamicLink) {
+	void markStack(int staticLink, int dynamicLink) {
 		push(new IntValue(staticLink));
 		push(new IntValue(dynamicLink));
 
@@ -237,7 +231,7 @@ final class DataStack {
 	 * @param address
 	 *            The address to store as the current frame base.
 	 */
-	public void setBase(int address) {
+	void setBase(int address) {
 		frameBase = address;
 	}
 
@@ -252,10 +246,10 @@ final class DataStack {
 	 * @param offset
 	 *            The offset into the target stack frame.
 	 * @return The absolute address for the target location.
-	 * @exception MachineFault
+	 * @throws MachineFault
 	 *                if the supplied level difference is invalid.
 	 */
-	public int getAddress(int levelDiff, int offset) {
+	int getAddress(int levelDiff, int offset) {
 		int result = frameBase;
 
 		for (int i = 0; i < levelDiff; i++) {
@@ -279,22 +273,22 @@ final class DataStack {
 	 * 
 	 * @return The absolute address of the top element.
 	 */
-	public int getTop() {
+	int getTop() {
 		return top;
 	}
 
 	/**
-	 * Returns a <code>String</code> representation of the object. Effectively,
+	 * Returns a {@code String} representation of the object. Effectively,
 	 * this is a dump of the stack from the uppermost element to the lowermost.
 	 * 
-	 * @return A <code>String</code> representation of the object.
+	 * @return A {@code String} representation of the object.
 	 */
 	public String toString() {
-		String result = new String();
+		StringBuilder result = new StringBuilder();
 		for (int i = top - 1; i >= 0; i--) {
-			result += get(i) + "\n";
+			result.append(get(i)).append('\n');
 		}
 
-		return result;
+		return result.toString();
 	}
 }

@@ -23,9 +23,10 @@ import java.util.StringTokenizer;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
 final class Loader {
-	/** A constant for code memory limit. */
+	/** How many instructions the code store holds unless told otherwise. */
 	static final int CODESIZE = 1000;
 
+	/** No instances. */
 	private Loader() {
 		throw new AssertionError("Not instantiable.");
 	}
@@ -44,7 +45,27 @@ final class Loader {
 	 *             if it is not a valid object file
 	 */
 	static Program load(InputStream is, String name) throws IOException {
-		List<Instruction> instructions = new ArrayList<>(CODESIZE);
+		return load(is, name, CODESIZE);
+	}
+
+	/**
+	 * Reads an object file into a code store of a given size.
+	 *
+	 * @param is
+	 *            the object file
+	 * @param name
+	 *            what to call it in a diagnostic
+	 * @param codeSize
+	 *            how many instructions the code store holds
+	 * @return the loaded program
+	 * @throws IOException
+	 *             if the object file cannot be read
+	 * @throws LoadException
+	 *             if it is not a valid object file
+	 */
+	static Program load(InputStream is, String name, int codeSize)
+			throws IOException {
+		List<Instruction> instructions = new ArrayList<>();
 
 		BufferedReader br = new BufferedReader(
 				new InputStreamReader(is, StandardCharsets.UTF_8));
@@ -88,7 +109,7 @@ final class Loader {
 
 			Operand operand = operand(mnemonic, operandText, line, lineno);
 
-			if (instructions.size() >= CODESIZE) {
+			if (instructions.size() >= codeSize) {
 				throw new LoadException(lineno,
 						"Exceeded code storage limit.");
 			}
@@ -102,18 +123,21 @@ final class Loader {
 	}
 
 	/**
-	 * Make an <code>Object</code> from a <code>String</code>. Because the type
-	 * of the third field in a single instruction is not pre-defined, we need to
-	 * be able to expect an <code>int</code>, a <code>float</code> or a
-	 * <code>String</code>. To simplify the storage, we handle each of them as
-	 * an <code>Object</code> anyway, so <code>int</code>s and
-	 * <code>float</code>s are wrapped by <code>Integer</code> and
-	 * <code>Float</code> respectively.
-	 * 
-	 * @param input
-	 *            A <code>String</code>.
-	 * @return An <code>Object</code> which is either a <code>String,</code>
-	 *         <code>Integer</code> or <code>Float</code>.
+	 * Parses the third field of an instruction as the kind of operand its
+	 * mnemonic takes.
+	 *
+	 * @param mnemonic
+	 *            the instruction's mnemonic, which decides what to parse
+	 * @param token
+	 *            the third whitespace-separated field
+	 * @param line
+	 *            the whole source line, needed because a string operand may
+	 *            contain spaces and so span several tokens
+	 * @param lineno
+	 *            the source line number, for the diagnostic
+	 * @return the parsed operand
+	 * @throws LoadException
+	 *             if the operand is not of the kind the mnemonic takes
 	 */
 	private static Operand operand(Mnemonic mnemonic, String token, String line,
 			int lineno) {

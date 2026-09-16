@@ -4,9 +4,9 @@ package net.logicsquad.pal;
  * A real value.
  *
  * <p>
- * A <code>float</code>, not a <code>double</code>: the manual specifies Java
- * <code>float</code> semantics, and the reference files record
- * <code>Float.toString</code>.
+ * A {@code float}, not a {@code double}: the manual specifies Java
+ * {@code float} semantics, and the reference files record
+ * {@code Float.toString}.
  *
  * @param value
  *            the value

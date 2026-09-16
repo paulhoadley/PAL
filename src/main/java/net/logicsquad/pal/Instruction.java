@@ -12,7 +12,7 @@ package net.logicsquad.pal;
  * <p>
  * The source line is kept as written. Reporting a fault against a
  * reconstruction of the instruction meant showing something the author never
- * typed: a real operand appeared as the parsed <code>float</code> rather than
+ * typed: a real operand appeared as the parsed {@code float} rather than
  * as written, comments vanished, and whitespace was normalised.
  *
  * @param mnemonic
