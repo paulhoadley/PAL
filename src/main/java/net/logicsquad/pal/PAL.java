@@ -268,17 +268,15 @@ public class PAL {
 			// Object to pull out of currInst.second.
 			Object o = currInst.getSecond();
 
-			Data tos, ntos, returnPoint, loadedVal;
+			Datum tos, ntos, returnPoint, loadedVal;
 
 			switch (currInst.getMnemonic()) {
 			case Mnemonic.CAL:
 				// Procedure/function call.
 
 				// Set return point field in stack mark.
-				returnPoint = dataStack.get(dataStack.getTop()
-						- currInst.getFirst() - 2);
-				returnPoint.setType(Data.INT);
-				returnPoint.setValue(Integer.valueOf(pc));
+				dataStack.set(dataStack.getTop() - currInst.getFirst() - 2,
+						new IntValue(pc));
 
 				// Set new frame base.
 				dataStack.setBase(dataStack.getTop() - currInst.getFirst());
@@ -309,13 +307,13 @@ public class PAL {
 
 				tos = dataStack.pop();
 
-				if (tos.getType() != Data.BOOL) {
+				if (!(tos instanceof BoolValue)) {
 					dataStack.push(tos);
 					error(currInst, "JIF - top of stack not a boolean.");
 					return ExitStatus.ABNORMAL;
 				}
 
-				if (!((Boolean) tos.getValue()).booleanValue()) {
+				if (!((BoolValue) tos).value()) {
 					int destination = ((Integer) o).intValue();
 
 					if (destination < 1 || destination > codeMem.size()) {
@@ -362,7 +360,7 @@ public class PAL {
 					error(currInst, "Argument to LCI must be an integer.");
 					return ExitStatus.ABNORMAL;
 				} else {
-					dataStack.push(new Data(Data.INT, o));
+					dataStack.push(new IntValue(((Integer) o).intValue()));
 				}
 				break;
 			case Mnemonic.LCR:
@@ -376,7 +374,7 @@ public class PAL {
 					error(currInst, "Argument to LCR must be a real.");
 					return ExitStatus.ABNORMAL;
 				} else {
-					dataStack.push(new Data(Data.REAL, o));
+					dataStack.push(new RealValue(((Float) o).floatValue()));
 				}
 				break;
 			case Mnemonic.LCS:
@@ -394,7 +392,7 @@ public class PAL {
 					} else {
 						String oS = (String) o;
 						oS = oS.substring(1, oS.length() - 1);
-						dataStack.push(new Data(Data.STRING, oS));
+						dataStack.push(new StringValue(oS));
 					}
 				}
 				break;
@@ -410,7 +408,7 @@ public class PAL {
 				int address = dataStack.getAddress(currInst.getFirst(),
 						((Integer) o).intValue());
 
-				dataStack.push(new Data(Data.INT, Integer.valueOf(address)));
+				dataStack.push(new IntValue(address));
 
 				break;
 			case Mnemonic.LDI:
@@ -418,17 +416,17 @@ public class PAL {
 
 				tos = dataStack.pop();
 
-				if (tos.getType() != Data.INT) {
+				if (!(tos instanceof IntValue)) {
 					dataStack.push(tos);
 					error(currInst, "LDI - top of stack must be an integer.");
 					return ExitStatus.ABNORMAL;
 				}
 
-				address = ((Integer) tos.getValue()).intValue();
+				address = ((IntValue) tos).value();
 
 				loadedVal = dataStack.get(address);
 
-				dataStack.push((Data) loadedVal.clone());
+				dataStack.push(loadedVal);
 
 				break;
 			case Mnemonic.LDV:
@@ -443,14 +441,14 @@ public class PAL {
 				loadedVal = dataStack.get(currInst.getFirst(),
 						((Integer) o).intValue());
 
-				dataStack.push((Data) loadedVal.clone());
+				dataStack.push(loadedVal);
 
 				break;
 			case Mnemonic.LDU:
 				// Load an uninitialised value onto the top of the
 				// stack.
 
-				dataStack.push(new Data(Data.UNDEF, null));
+				dataStack.push(Undef.INSTANCE);
 
 				break;
 			case Mnemonic.MST:
@@ -486,10 +484,8 @@ public class PAL {
 					}
 					int intVal = Integer.parseInt(intLine);
 					// Put the val in the stack.
-					loadedVal = dataStack.get(currInst.getFirst(),
-							((Integer) o).intValue());
-					loadedVal.setType(Data.INT);
-					loadedVal.setValue(Integer.valueOf(intVal));
+					dataStack.set(dataStack.getAddress(currInst.getFirst(),
+							((Integer) o).intValue()), new IntValue(intVal));
 				} catch (IOException e1) {
 					err.println(e1);
 				} catch (NumberFormatException e2) {
@@ -517,10 +513,8 @@ public class PAL {
 					}
 					float realVal = Float.parseFloat(realLine);
 					// Put the val in the stack.
-					loadedVal = dataStack.get(currInst.getFirst(),
-							((Integer) o).intValue());
-					loadedVal.setType(Data.REAL);
-					loadedVal.setValue(Float.valueOf(realVal));
+					dataStack.set(dataStack.getAddress(currInst.getFirst(),
+							((Integer) o).intValue()), new RealValue(realVal));
 				} catch (IOException e1) {
 					err.println(e1);
 				} catch (NumberFormatException e2) {
@@ -542,10 +536,8 @@ public class PAL {
 
 				// Get the location of the exception handler pointer
 				// in the highest stack mark.
-				loadedVal = dataStack.get(0, -1);
-
-				loadedVal.setType(Data.INT);
-				loadedVal.setValue(o);
+				dataStack.set(dataStack.getAddress(0, -1),
+						new IntValue(((Integer) o).intValue()));
 
 				break;
 			case Mnemonic.SIG:
@@ -568,8 +560,7 @@ public class PAL {
 					// don't want to run that same handler again! A
 					// simple way to achieve this is to nullify the
 					// current exception handler pointer.
-					Data handlerLocation = dataStack.get(0, -1);
-					handlerLocation.setValue(Integer.valueOf(0));
+					dataStack.set(dataStack.getAddress(0, -1), new IntValue(0));
 				}
 
 				// Raise the exception...
@@ -585,18 +576,16 @@ public class PAL {
 
 				tos = dataStack.pop();
 
-				if (tos.getType() != Data.INT) {
+				if (!(tos instanceof IntValue)) {
 					dataStack.push(tos);
 					error(currInst, "STI - top of stack must be an integer.");
 					return ExitStatus.ABNORMAL;
 				}
 
 				ntos = dataStack.pop();
-				int loadAddress = ((Integer) tos.getValue()).intValue();
-				loadedVal = dataStack.get(loadAddress);
+				int loadAddress = ((IntValue) tos).value();
 
-				loadedVal.setType(ntos.getType());
-				loadedVal.setValue(ntos.getValue());
+				dataStack.set(loadAddress, ntos);
 
 				break;
 			case Mnemonic.STO:
@@ -609,11 +598,9 @@ public class PAL {
 				}
 
 				tos = dataStack.pop();
-				loadedVal = dataStack.get(currInst.getFirst(),
-						((Integer) o).intValue());
 
-				loadedVal.setType(tos.getType());
-				loadedVal.setValue(tos.getValue());
+				dataStack.set(dataStack.getAddress(currInst.getFirst(),
+						((Integer) o).intValue()), tos);
 
 				break;
 			}
@@ -648,7 +635,7 @@ public class PAL {
 			return ExitStatus.ABNORMAL;
 		}
 
-		Data returnPoint, tos, ntos, dynamicLink;
+		Datum returnPoint, tos, ntos, dynamicLink;
 
 		switch (opr) {
 		case 0:
@@ -656,7 +643,7 @@ public class PAL {
 
 			// Set program counter.
 			returnPoint = dataStack.get(0, -2);
-			pc = ((Integer) returnPoint.getValue()).intValue();
+			pc = ((IntValue) returnPoint).value();
 
 			// Remember the dynamic link.
 			dynamicLink = dataStack.get(0, -3);
@@ -666,7 +653,7 @@ public class PAL {
 
 			// Set the new frame base using the remembered dynamic
 			// link.
-			dataStack.setBase(((Integer) dynamicLink.getValue()).intValue());
+			dataStack.setBase(((IntValue) dynamicLink).value());
 
 			break;
 		case 1:
@@ -676,7 +663,7 @@ public class PAL {
 
 			// Set program counter.
 			returnPoint = dataStack.get(0, -2);
-			pc = ((Integer) returnPoint.getValue()).intValue();
+			pc = ((IntValue) returnPoint).value();
 
 			// Remember the dynamic link.
 			dynamicLink = dataStack.get(0, -3);
@@ -686,7 +673,7 @@ public class PAL {
 
 			// Set the new frame base using the remembered dynamic
 			// link.
-			dataStack.setBase(((Integer) dynamicLink.getValue()).intValue());
+			dataStack.setBase(((IntValue) dynamicLink).value());
 
 			// Leave the return value on top of the stack.
 			dataStack.push(tos);
@@ -696,12 +683,12 @@ public class PAL {
 			// Negate the value on TOS if it is an integer or real.
 
 			tos = dataStack.peek();
-			if (tos.getType() == Data.INT) {
-				int oldValue = ((Integer) tos.getValue()).intValue();
-				tos.setValue(Integer.valueOf(-oldValue));
-			} else if (tos.getType() == Data.REAL) {
-				float oldValue = ((Float) tos.getValue()).floatValue();
-				tos.setValue(Float.valueOf(-oldValue));
+			if (tos instanceof IntValue intValue) {
+				dataStack.set(dataStack.getTop() - 1,
+						new IntValue(-intValue.value()));
+			} else if (tos instanceof RealValue realValue) {
+				dataStack.set(dataStack.getTop() - 1,
+						new RealValue(-realValue.value()));
 			} else {
 				error(currInst, "Cannot negate boolean, string or UNDEF value.");
 				return ExitStatus.ABNORMAL;
@@ -717,36 +704,35 @@ public class PAL {
 
 			tos = dataStack.pop();
 			ntos = dataStack.pop();
-			if (ntos.getType() != tos.getType()) {
+			if (ntos.getClass() != tos.getClass()) {
 				dataStack.push(ntos);
 				dataStack.push(tos);
 				error(currInst, "Values for arithmetic operations must be"
 						+ " of same type.");
 				return ExitStatus.ABNORMAL;
 			} else {
-				int type = tos.getType();
-				if (type != Data.INT && type != Data.REAL) {
+				if (!(tos instanceof IntValue) && !(tos instanceof RealValue)) {
 					dataStack.push(ntos);
 					dataStack.push(tos);
 					error(currInst, "Values for arithmetic operations must be"
 							+ " of type integer or real.");
 					return ExitStatus.ABNORMAL;
 				}
-				if (type == Data.INT) {
-					int int1 = ((Integer) ntos.getValue()).intValue();
-					int int2 = ((Integer) tos.getValue()).intValue();
+				if (tos instanceof IntValue) {
+					int int1 = ((IntValue) ntos).value();
+					int int2 = ((IntValue) tos).value();
 					switch (opr) {
 					case 3:
-						dataStack.push(new Data(Data.INT, Integer.valueOf(int1
-								+ int2)));
+						dataStack.push(new IntValue(int1
+								+ int2));
 						break;
 					case 4:
-						dataStack.push(new Data(Data.INT, Integer.valueOf(int1
-								- int2)));
+						dataStack.push(new IntValue(int1
+								- int2));
 						break;
 					case 5:
-						dataStack.push(new Data(Data.INT, Integer.valueOf(int1
-								* int2)));
+						dataStack.push(new IntValue(int1
+								* int2));
 						break;
 					case 6:
 						if (int2 == 0) {
@@ -756,26 +742,26 @@ public class PAL {
 							return ExitStatus.ABNORMAL;
 						}
 
-						dataStack.push(new Data(Data.INT, Integer.valueOf(int1
-								/ int2)));
+						dataStack.push(new IntValue(int1
+								/ int2));
 						break;
 					default:
 					}
 				} else {
-					float flt1 = ((Float) ntos.getValue()).floatValue();
-					float flt2 = ((Float) tos.getValue()).floatValue();
+					float flt1 = ((RealValue) ntos).value();
+					float flt2 = ((RealValue) tos).value();
 					switch (opr) {
 					case 3:
-						dataStack.push(new Data(Data.REAL, Float.valueOf(flt1
-								+ flt2)));
+						dataStack.push(new RealValue(flt1
+								+ flt2));
 						break;
 					case 4:
-						dataStack.push(new Data(Data.REAL, Float.valueOf(flt1
-								- flt2)));
+						dataStack.push(new RealValue(flt1
+								- flt2));
 						break;
 					case 5:
-						dataStack.push(new Data(Data.REAL, Float.valueOf(flt1
-								* flt2)));
+						dataStack.push(new RealValue(flt1
+								* flt2));
 						break;
 					case 6:
 						if (flt2 == 0) {
@@ -785,8 +771,8 @@ public class PAL {
 							return ExitStatus.ABNORMAL;
 						}
 
-						dataStack.push(new Data(Data.REAL, Float.valueOf(flt1
-								/ flt2)));
+						dataStack.push(new RealValue(flt1
+								/ flt2));
 						break;
 					default:
 					}
@@ -797,27 +783,27 @@ public class PAL {
 			// Raise the value at TOS-1 to the power of the value at
 			// TOS, pop both and push the result.
 
-			if (dataStack.peek().getType() != Data.INT) {
+			if (!(dataStack.peek() instanceof IntValue)) {
 				error(currInst, "Exponent must be of type integer.");
 				return ExitStatus.ABNORMAL;
 			}
 			tos = dataStack.pop();
-			int exponent = ((Integer) tos.getValue()).intValue();
+			int exponent = ((IntValue) tos).value();
 
-			int baseType = dataStack.peek().getType();
-			if (baseType != Data.INT && baseType != Data.REAL) {
+			if (!(dataStack.peek() instanceof IntValue)
+					&& !(dataStack.peek() instanceof RealValue)) {
 				error(currInst, "Base must be of type integer or real.");
 				return ExitStatus.ABNORMAL;
 			}
 			ntos = dataStack.pop();
-			if (baseType == Data.INT) {
-				int base = ((Integer) ntos.getValue()).intValue();
+			if (ntos instanceof IntValue) {
+				int base = ((IntValue) ntos).value();
 				int intAnswer = (int) Math.pow(base, exponent);
-				dataStack.push(new Data(Data.INT, Integer.valueOf(intAnswer)));
+				dataStack.push(new IntValue(intAnswer));
 			} else {
-				float base = ((Float) ntos.getValue()).floatValue();
+				float base = ((RealValue) ntos).value();
 				float floatAnswer = (float) Math.pow(base, exponent);
-				dataStack.push(new Data(Data.REAL, Float.valueOf(floatAnswer)));
+				dataStack.push(new RealValue(floatAnswer));
 			}
 			break;
 		case 8:
@@ -825,31 +811,31 @@ public class PAL {
 
 			tos = dataStack.pop();
 			ntos = dataStack.pop();
-			if (tos.getType() != Data.STRING || ntos.getType() != Data.STRING) {
+			if (!(tos instanceof StringValue) || !(ntos instanceof StringValue)) {
 				dataStack.push(ntos);
 				dataStack.push(tos);
 				error(currInst,
 						"Both arguments to OPR 8 must be of type string.");
 				return ExitStatus.ABNORMAL;
 			}
-			String sResult = (String) ntos.getValue();
-			sResult += (String) tos.getValue();
-			dataStack.push(new Data(Data.STRING, sResult));
+			String sResult = ((StringValue) ntos).value();
+			sResult += ((StringValue) tos).value();
+			dataStack.push(new StringValue(sResult));
 			break;
 		case 9:
 			// Test if TOS is an odd integer.
 
-			if (dataStack.peek().getType() != Data.INT) {
+			if (!(dataStack.peek() instanceof IntValue)) {
 				error(currInst, "Argument to OPR 9 must be of type integer.");
 				return ExitStatus.ABNORMAL;
 			} else {
 				tos = dataStack.pop();
 				// NB the % operator will give a negative for a
 				// negative number.
-				if (Math.abs(((Integer) tos.getValue()).intValue() % 2) == 1) {
-					dataStack.push(new Data(Data.BOOL, Boolean.valueOf(true)));
+				if (Math.abs(((IntValue) tos).value() % 2) == 1) {
+					dataStack.push(new BoolValue(true));
 				} else {
-					dataStack.push(new Data(Data.BOOL, Boolean.valueOf(false)));
+					dataStack.push(new BoolValue(false));
 				}
 			}
 			break;
@@ -865,78 +851,65 @@ public class PAL {
 			tos = dataStack.pop();
 			ntos = dataStack.pop();
 
-			if (ntos.getType() != tos.getType()) {
+			if (ntos.getClass() != tos.getClass()) {
 				dataStack.push(ntos);
 				dataStack.push(tos);
 				error(currInst, "Values for comparison operations must be"
 						+ " of same type.");
 				return ExitStatus.ABNORMAL;
 			} else {
-				int type = tos.getType();
-				if (type != Data.INT && type != Data.REAL) {
+				if (!(tos instanceof IntValue) && !(tos instanceof RealValue)) {
 					dataStack.push(ntos);
 					dataStack.push(tos);
 					error(currInst, "Values for comparison operations must be"
 							+ " of type integer or real.");
 					return ExitStatus.ABNORMAL;
 				}
-				if (type == Data.INT) {
-					int int1 = ((Integer) ntos.getValue()).intValue();
-					int int2 = ((Integer) tos.getValue()).intValue();
+				if (tos instanceof IntValue) {
+					int int1 = ((IntValue) ntos).value();
+					int int2 = ((IntValue) tos).value();
 					switch (opr) {
 					case 10:
-						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
-								int1 == int2)));
+						dataStack.push(new BoolValue(int1 == int2));
 						break;
 					case 11:
-						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
-								int1 != int2)));
+						dataStack.push(new BoolValue(int1 != int2));
 						break;
 					case 12:
-						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
-								int1 < int2)));
+						dataStack.push(new BoolValue(int1 < int2));
 						break;
 					case 13:
-						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
-								int1 >= int2)));
+						dataStack.push(new BoolValue(int1 >= int2));
 						break;
 					case 14:
-						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
-								int1 > int2)));
+						dataStack.push(new BoolValue(int1 > int2));
 						break;
 					case 15:
-						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
-								int1 <= int2)));
+						dataStack.push(new BoolValue(int1 <= int2));
 						break;
 					default:
 					}
 				} else {
-					float flt1 = ((Float) ntos.getValue()).floatValue();
-					float flt2 = ((Float) tos.getValue()).floatValue();
+					float flt1 = ((RealValue) ntos).value();
+					float flt2 = ((RealValue) tos).value();
 					switch (opr) {
 					case 10:
-						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
-								flt1 == flt2)));
+						dataStack.push(new BoolValue(flt1 == flt2));
 						break;
 					case 11:
-						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
-								flt1 != flt2)));
+						dataStack.push(new BoolValue(flt1 != flt2));
 						break;
 					case 12:
-						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
-								flt1 < flt2)));
+						dataStack.push(new BoolValue(flt1 < flt2));
 						break;
 					case 13:
-						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
-								flt1 >= flt2)));
+						dataStack.push(new BoolValue(flt1 >= flt2));
 						break;
 					case 14:
-						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
-								flt1 > flt2)));
+						dataStack.push(new BoolValue(flt1 > flt2));
 						break;
 					case 15:
-						dataStack.push(new Data(Data.BOOL, Boolean.valueOf(
-								flt1 <= flt2)));
+						dataStack.push(new BoolValue(flt1 <= flt2));
 						break;
 					default:
 					}
@@ -948,24 +921,24 @@ public class PAL {
 
 			tos = dataStack.pop();
 
-			if (tos.getType() != Data.BOOL) {
+			if (!(tos instanceof BoolValue)) {
 				dataStack.push(tos);
 				error(currInst, "Top of stack must be a boolean.");
 				return ExitStatus.ABNORMAL;
 			}
 
-			boolean bResult = !((Boolean) tos.getValue()).booleanValue();
-			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(bResult)));
+			boolean bResult = !((BoolValue) tos).value();
+			dataStack.push(new BoolValue(bResult));
 			break;
 		case 17:
 			// Push boolean true on TOS.
 
-			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(true)));
+			dataStack.push(new BoolValue(true));
 			break;
 		case 18:
 			// Push boolean false on TOS
 
-			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(false)));
+			dataStack.push(new BoolValue(false));
 			break;
 		case 19:
 			// Test for EOF.
@@ -973,9 +946,9 @@ public class PAL {
 			try {
 				int nextByte = pushBack.read();
 				if (nextByte == -1) {
-					dataStack.push(new Data(Data.BOOL, Boolean.valueOf(true)));
+					dataStack.push(new BoolValue(true));
 				} else {
-					dataStack.push(new Data(Data.BOOL, Boolean.valueOf(false)));
+					dataStack.push(new BoolValue(false));
 					pushBack.unread(nextByte);
 				}
 			} catch (IOException e) {
@@ -985,8 +958,8 @@ public class PAL {
 		case 20:
 			// Pop value on TOS and print it.
 
-			if (dataStack.peek().getType() == Data.BOOL
-					|| dataStack.peek().getType() == Data.UNDEF) {
+			if (dataStack.peek() instanceof BoolValue
+					|| dataStack.peek() instanceof Undef) {
 				error(currInst, "OPR 20 can only print values"
 						+ " of type integer, real or string.");
 				return ExitStatus.ABNORMAL;
@@ -1012,7 +985,7 @@ public class PAL {
 			// Duplicate the element at the top of the stack.
 
 			tos = dataStack.peek();
-			dataStack.push((Data) tos.clone());
+			dataStack.push(tos);
 			break;
 		case 24:
 			// Discard the element at the top of the stack.
@@ -1022,95 +995,93 @@ public class PAL {
 		case 25:
 			// Convert the integer at TOS to a real.
 
-			if (dataStack.peek().getType() != Data.INT) {
+			if (!(dataStack.peek() instanceof IntValue)) {
 				error(currInst, "Integer to real conversion can only be"
 						+ " performed on a value of type integer.");
 				return ExitStatus.ABNORMAL;
 			}
-			float fAns = ((Integer) dataStack.pop().getValue()).floatValue();
-			dataStack.push(new Data(Data.REAL, Float.valueOf(fAns)));
+			float fAns = (float) ((IntValue) dataStack.pop()).value();
+			dataStack.push(new RealValue(fAns));
 			break;
 		case 26:
 			// Convert the real at TOS to an integer.
 
-			if (dataStack.peek().getType() != Data.REAL) {
+			if (!(dataStack.peek() instanceof RealValue)) {
 				error(currInst, "Real to integer conversion can only be"
 						+ " performed on a value of type real.");
 				return ExitStatus.ABNORMAL;
 			}
-			int iResult = ((Float) dataStack.pop().getValue()).intValue();
-			dataStack.push(new Data(Data.INT, Integer.valueOf(iResult)));
+			int iResult = (int) ((RealValue) dataStack.pop()).value();
+			dataStack.push(new IntValue(iResult));
 			break;
 		case 27:
 			// Convert the integer at TOS to a string.
 
-			if (dataStack.peek().getType() != Data.INT) {
+			if (!(dataStack.peek() instanceof IntValue)) {
 				error(currInst, "Integer to string conversion can only be"
 						+ " performed on a value of type integer.");
 				return ExitStatus.ABNORMAL;
 			}
-			dataStack.push(new Data(Data.STRING, dataStack.pop().getValue()
-					.toString()));
+			dataStack.push(new StringValue(dataStack.pop().toString()));
 			break;
 		case 28:
 			// Convert the real at TOS to a string.
 
-			if (dataStack.peek().getType() != Data.REAL) {
+			if (!(dataStack.peek() instanceof RealValue)) {
 				error(currInst, "Real to string conversion can only be"
 						+ " performed on value of type real.");
 				return ExitStatus.ABNORMAL;
 			}
-			dataStack.push(new Data(Data.STRING, dataStack.pop().getValue()
-					.toString()));
+			dataStack.push(new StringValue(dataStack.pop().toString()));
 			break;
 		case 29:
 			// Logical and of two booleans.
 
 			tos = dataStack.pop();
 			ntos = dataStack.pop();
-			if (tos.getType() != Data.BOOL || ntos.getType() != Data.BOOL) {
+			if (!(tos instanceof BoolValue) || !(ntos instanceof BoolValue)) {
 				dataStack.push(ntos);
 				dataStack.push(tos);
 				error(currInst, "Logical and can only be"
 						+ " performed on values of type boolean.");
 				return ExitStatus.ABNORMAL;
 			}
-			boolean bool1 = ((Boolean) tos.getValue()).booleanValue();
-			boolean bool2 = ((Boolean) ntos.getValue()).booleanValue();
-			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(bool1 && bool2)));
+			boolean bool1 = ((BoolValue) tos).value();
+			boolean bool2 = ((BoolValue) ntos).value();
+			dataStack.push(new BoolValue(bool1 && bool2));
 			break;
 		case 30:
 			// Logical or of two booleans.
 
 			tos = dataStack.pop();
 			ntos = dataStack.pop();
-			if (tos.getType() != Data.BOOL || ntos.getType() != Data.BOOL) {
+			if (!(tos instanceof BoolValue) || !(ntos instanceof BoolValue)) {
 				dataStack.push(ntos);
 				dataStack.push(tos);
 				error(currInst, "Logical or can only be"
 						+ " performed on values of type boolean.");
 				return ExitStatus.ABNORMAL;
 			}
-			bool1 = ((Boolean) tos.getValue()).booleanValue();
-			bool2 = ((Boolean) ntos.getValue()).booleanValue();
-			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(bool1 || bool2)));
+			bool1 = ((BoolValue) tos).value();
+			bool2 = ((BoolValue) ntos).value();
+			dataStack.push(new BoolValue(bool1 || bool2));
 			break;
 		case 31:
 			// Test whether the current exception code is the same as
 			// the integer on TOS.
 
 			tos = dataStack.pop();
-			if (tos.getType() != Data.INT) {
+			if (!(tos instanceof IntValue)) {
 				dataStack.push(tos);
 				error(currInst, "OPR 0 31 expects an integer value "
 						+ "on top of the stack.");
 				return ExitStatus.ABNORMAL;
 			}
 
-			int testValue = ((Integer) tos.getValue()).intValue();
+			int testValue = ((IntValue) tos).value();
 			boolean pushValue = testValue == currentException;
 
-			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(pushValue)));
+			dataStack.push(new BoolValue(pushValue));
 			break;
 		default:
 			// Unreachable: opr is range checked above, and every operation
@@ -1172,7 +1143,7 @@ public class PAL {
 			return ExitStatus.ABNORMAL;
 		}
 
-		Data handlerLocation, dynamicLink;
+		Datum handlerLocation, dynamicLink;
 		int handlerAddress;
 
 		boolean moreFrames = true;
@@ -1180,12 +1151,12 @@ public class PAL {
 		while (true) {
 			handlerLocation = dataStack.get(0, -1);
 
-			if (handlerLocation.getType() != Data.INT) {
+			if (!(handlerLocation instanceof IntValue)) {
 				error(currInst, "Exception handler address must be an integer.");
 				return ExitStatus.ABNORMAL;
 			}
 
-			handlerAddress = ((Integer) handlerLocation.getValue()).intValue();
+			handlerAddress = ((IntValue) handlerLocation).value();
 
 			if (handlerAddress < 0 || handlerAddress > codeMem.size()) {
 				error(currInst, "Exception handler address out of code range.");
@@ -1211,7 +1182,7 @@ public class PAL {
 
 				// Set the new frame base using the remembered dynamic
 				// link.
-				int baseAddr = ((Integer) dynamicLink.getValue()).intValue();
+				int baseAddr = ((IntValue) dynamicLink).value();
 				dataStack.setBase(baseAddr);
 			} else {
 				// There is an exception handler.

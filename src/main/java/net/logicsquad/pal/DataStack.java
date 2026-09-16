@@ -10,8 +10,8 @@ import java.util.List;
  * @author Paul Hoadley &lt;paulh@logicsquad.net&gt;
  */
 final class DataStack {
-	/** A container for the <code>Data</code> objects. */
-	private List<Data> data;
+	/** A container for the values on the stack. */
+	private List<Datum> data;
 
 	/** The address of the current frame's base. */
 	private int frameBase;
@@ -38,7 +38,7 @@ final class DataStack {
 	DataStack(int max) {
 		top = 0;
 
-		data = new ArrayList<Data>();
+		data = new ArrayList<Datum>();
 
 		// Set up mark stack part for main program activation record.
 		markStack(0, 0);
@@ -53,11 +53,11 @@ final class DataStack {
 	 * Put a data object onto the top of the stack.
 	 * 
 	 * @param datum
-	 *            A <code>Data</code> object to be pushed onto the stack.
+	 *            the value to push onto the stack.
 	 * @exception MachineFault
 	 *                if there is insufficient free stack space.
 	 */
-	public void push(Data datum) {
+	public void push(Datum datum) {
 		if (maxSize != 0 && top + 1 > maxSize) {
 			throw MachineFault.stackOverflow(maxSize);
 		}
@@ -72,11 +72,11 @@ final class DataStack {
 	/**
 	 * Pop the top value from the stack.
 	 * 
-	 * @return The <code>Data</code> object removed from the top of the stack.
+	 * @return The value removed from the top of the stack.
 	 * @exception MachineFault
 	 *                if the current frame holds no value to pop.
 	 */
-	public Data pop() {
+	public Datum pop() {
 		if (top <= frameBase) {
 			throw MachineFault.stackUnderflow();
 		}
@@ -87,11 +87,11 @@ final class DataStack {
 	/**
 	 * Peek at the top of the stack.
 	 * 
-	 * @return The <code>Data</code> object remaining on the top of the stack.
+	 * @return The value remaining on the top of the stack.
 	 * @exception MachineFault
 	 *                if the current frame holds no value to peek at.
 	 */
-	public Data peek() {
+	public Datum peek() {
 		if (top <= frameBase) {
 			throw MachineFault.stackUnderflow();
 		}
@@ -127,11 +127,11 @@ final class DataStack {
 	 * 
 	 * @param address
 	 *            The absolute address for the target location.
-	 * @return The <code>Data</code> object at the target location.
+	 * @return The value at the target location.
 	 * @exception MachineFault
 	 *                if the supplied address is out of bounds.
 	 */
-	public Data get(int address) {
+	public Datum get(int address) {
 		if (address < 0 || address >= top) {
 			throw MachineFault.badAddress(address);
 		}
@@ -149,14 +149,40 @@ final class DataStack {
 	 *            location.
 	 * @param offset
 	 *            The offset into the target stack frame.
-	 * @return The <code>Data</code> object at the target address.
+	 * @return The value at the target address.
 	 * @exception MachineFault
 	 *                if the supplied address is out of bounds.
 	 */
-	public Data get(int levelDiff, int offset) {
+	public Datum get(int levelDiff, int offset) {
 		int address = getAddress(levelDiff, offset);
 
 		return get(address);
+	}
+
+	/**
+	 * Overwrite a data location elsewhere in the stack. The location is given
+	 * as an absolute stack address.
+	 *
+	 * <p>
+	 * Values are immutable, so an instruction that writes to a location it did
+	 * not push, and there are several, replaces the value in the cell rather
+	 * than reaching into it.
+	 *
+	 * @param address
+	 *            The absolute address for the target location.
+	 * @param datum
+	 *            The value to store there.
+	 * @exception MachineFault
+	 *                if the supplied address is out of bounds.
+	 */
+	public void set(int address, Datum datum) {
+		if (address < 0 || address >= top) {
+			throw MachineFault.badAddress(address);
+		}
+
+		data.set(address, datum);
+
+		return;
 	}
 
 	/**
@@ -175,7 +201,7 @@ final class DataStack {
 		}
 
 		for (int i = 0; i < amount; i++) {
-			data.add(new Data(Data.UNDEF, null));
+			data.add(Undef.INSTANCE);
 			top++;
 		}
 	}
@@ -194,15 +220,15 @@ final class DataStack {
 	 *                memory.
 	 */
 	public void markStack(int staticLink, int dynamicLink) {
-		push(new Data(Data.INT, Integer.valueOf(staticLink)));
-		push(new Data(Data.INT, Integer.valueOf(dynamicLink)));
+		push(new IntValue(staticLink));
+		push(new IntValue(dynamicLink));
 
 		// Leave space for return point.
-		push(new Data(Data.INT, Integer.valueOf(0)));
+		push(new IntValue(0));
 
 		// Dummy exception handler address - indicates that no handler
 		// is registered.
-		push(new Data(Data.INT, Integer.valueOf(0)));
+		push(new IntValue(0));
 	}
 
 	/**
@@ -234,7 +260,13 @@ final class DataStack {
 
 		for (int i = 0; i < levelDiff; i++) {
 			// Extract the static link from the stack mark.
-			result = ((Integer) get(result - 4).getValue()).intValue();
+			if (!(get(result - 4) instanceof IntValue link)) {
+				// The machine writes its own stack marks, so a link that is
+				// not an integer is a bug here rather than in the program.
+				throw new IllegalStateException(
+						"Static link at " + (result - 4) + " is not an integer.");
+			}
+			result = link.value();
 		}
 
 		result += offset;
