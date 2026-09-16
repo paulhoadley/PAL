@@ -38,6 +38,13 @@ public class PAL {
 	/** The program counter. */
 	private int pc;
 
+	/**
+	 * The instruction currently executing. Held so that a {@link MachineFault}
+	 * raised in {@link DataStack}, which has no idea what the machine is doing,
+	 * can still be reported against the instruction that provoked it.
+	 */
+	private Code currentInstruction;
+
 	/** Input reader. */
 	private BufferedReader inputReader;
 
@@ -90,7 +97,7 @@ public class PAL {
 	 */
 	public static void main(String[] args) {
 		if (args.length > 1) {
-			usage(System.out);
+			usage(System.err);
 			System.exit(ExitStatus.ABNORMAL.exitCode());
 		} else if (args.length == 1) {
 			filename = args[0];
@@ -99,16 +106,18 @@ public class PAL {
 		// Make a machine and load the code. Anything that stops us
 		// getting as far as a termination instruction is abnormal.
 		ExitStatus status = ExitStatus.ABNORMAL;
-		try {
-			PAL machine = new PAL(new FileInputStream(filename));
+		try (InputStream is = new FileInputStream(filename)) {
+			PAL machine = new PAL(is);
 			status = machine.execute();
-		} catch (OutOfMemoryError e) {
-			System.err.println(e.getMessage());
-		} catch (IndexOutOfBoundsException e) {
-			System.err.println(e.getMessage());
+		} catch (LoadException e) {
+			System.err.println(filename + ":" + e.lineno() + ": "
+					+ e.getMessage());
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println("Cannot open " + filename + ".");
+			usage(System.err);
+		} catch (IOException e) {
+			System.err.println("Error reading " + filename + ": "
+					+ e.getMessage());
 		}
 		System.exit(status.exitCode());
 	}
@@ -120,7 +129,7 @@ public class PAL {
 	 * lexical analysis of the source file is quite rigid. Any deviation from
 	 * the prescribed format for source files causes the machine to stop.
 	 */
-	PAL(InputStream is) {
+	PAL(InputStream is) throws IOException {
 		this(is, System.in, System.out, System.err);
 	}
 
@@ -140,7 +149,8 @@ public class PAL {
 	 * @param err
 	 *            stream for load errors and runtime diagnostics
 	 */
-	PAL(InputStream is, InputStream in, PrintStream out, PrintStream err) {
+	PAL(InputStream is, InputStream in, PrintStream out, PrintStream err)
+			throws IOException {
 		this.out = out;
 		this.err = err;
 
@@ -148,82 +158,73 @@ public class PAL {
 		codeMem = new ArrayList<Code>(CODESIZE);
 		dataStack = new DataStack(DATASIZE);
 
-		try {
-			BufferedReader br = new BufferedReader(new InputStreamReader(is));
-			int lineno = 1;
-			String line = br.readLine();
-			Mnemonic mnemonic = null;
-			int first = 0;
-			Object second = null;
-			StringTokenizer st;
+		BufferedReader br = new BufferedReader(new InputStreamReader(is));
+		int lineno = 1;
+		String line = br.readLine();
+		Mnemonic mnemonic = null;
+		int first = 0;
+		Object second = null;
+		StringTokenizer st;
 
-			while (line != null) {
-				if (lineno > CODESIZE) {
-					err.println("Exceeded code storage limit at line "
-							+ lineno);
-					System.exit(ExitStatus.ABNORMAL.exitCode());
-				}
-				st = new StringTokenizer(line);
+		while (line != null) {
+			st = new StringTokenizer(line);
 
-				// It seems reasonable to allow blank lines in the
-				// source.
-				if (!(st.hasMoreTokens())) {
-					line = br.readLine();
-					lineno++;
-					continue;
-				}
-
-				// May not come in groups of three, in which case,
-				// catch the error.
-				try {
-					String token = st.nextToken();
-					Optional<Mnemonic> parsed = Mnemonic.from(token);
-					if (parsed.isEmpty()) {
-						err.println("Unknown mnemonic '" + token
-								+ "' on line " + lineno);
-						System.exit(ExitStatus.ABNORMAL.exitCode());
-					}
-					mnemonic = parsed.get();
-					first = Integer.parseInt(st.nextToken());
-					String s = st.nextToken();
-					if (s.startsWith("'")) {
-						int start = line.indexOf('\'');
-						int end = line.indexOf('\'', start + 1);
-						second = line.substring(start, end + 1);
-					} else {
-						second = makeObject(s);
-						if (second instanceof String) {
-							err.println("Unrecognised second operand"
-									+ " on line " + lineno);
-							System.exit(ExitStatus.ABNORMAL.exitCode());
-						}
-					}
-				} catch (NoSuchElementException e) {
-					err.println("Not enough tokens on line " + lineno);
-					System.exit(ExitStatus.ABNORMAL.exitCode());
-				} catch (NumberFormatException e) {
-					err.println("First operand non-integer on line "
-							+ lineno);
-					System.exit(ExitStatus.ABNORMAL.exitCode());
-				}
-				codeMem.add(new Code(mnemonic, first, second, lineno));
+			// It seems reasonable to allow blank lines in the
+			// source.
+			if (!(st.hasMoreTokens())) {
 				line = br.readLine();
 				lineno++;
+				continue;
 			}
 
-			// Set up the input reader.
-			pushBack = new PushbackReader(new InputStreamReader(in));
-			// Note: the internal buffer of the BufferedReader is set
-			// to 1 (the smallest possible) so that it won't buffer up
-			// to EOF, thereby confusing OPR 19.
-			inputReader = new BufferedReader(pushBack, 1);
-		} catch (FileNotFoundException e) {
-			usage(err);
-			System.exit(ExitStatus.ABNORMAL.exitCode());
-		} catch (IOException e) {
-			err.println(e);
-			System.exit(ExitStatus.ABNORMAL.exitCode());
+			// May not come in groups of three, in which case,
+			// catch the error.
+			try {
+				String token = st.nextToken();
+				Optional<Mnemonic> parsed = Mnemonic.from(token);
+				if (parsed.isEmpty()) {
+					throw new LoadException(lineno,
+							"Unknown mnemonic '" + token + "'.");
+				}
+				mnemonic = parsed.get();
+				first = Integer.parseInt(st.nextToken());
+				String s = st.nextToken();
+				if (s.startsWith("'")) {
+					int start = line.indexOf('\'');
+					int end = line.indexOf('\'', start + 1);
+					if (end < 0) {
+						throw new LoadException(lineno,
+								"Unterminated string literal.");
+					}
+					second = line.substring(start, end + 1);
+				} else {
+					second = makeObject(s);
+					if (second instanceof String) {
+						throw new LoadException(lineno,
+								"Unrecognised second operand.");
+					}
+				}
+			} catch (NoSuchElementException e) {
+				throw new LoadException(lineno, "Not enough tokens.");
+			} catch (NumberFormatException e) {
+				throw new LoadException(lineno,
+						"First operand non-integer.");
+			}
+			if (codeMem.size() >= CODESIZE) {
+				throw new LoadException(lineno,
+						"Exceeded code storage limit.");
+			}
+			codeMem.add(new Code(mnemonic, first, second, lineno));
+			line = br.readLine();
+			lineno++;
 		}
+
+		// Set up the input reader.
+		pushBack = new PushbackReader(new InputStreamReader(in));
+		// Note: the internal buffer of the BufferedReader is set
+		// to 1 (the smallest possible) so that it won't buffer up
+		// to EOF, thereby confusing OPR 19.
+		inputReader = new BufferedReader(pushBack, 1);
 
 		currentException = 0;
 
@@ -237,6 +238,21 @@ public class PAL {
 	 * PAL Machine</a>.
 	 */
 	ExitStatus execute() {
+		try {
+			return run();
+		} catch (MachineFault fault) {
+			error(currentInstruction, fault.getMessage());
+			return ExitStatus.ABNORMAL;
+		}
+	}
+
+	/**
+	 * Run the loaded program, leaving any {@link MachineFault} to
+	 * {@link PAL#execute()} to report.
+	 *
+	 * @return how the program finished
+	 */
+	private ExitStatus run() {
 		// Initialise program counter.
 		pc = 0;
 
@@ -244,6 +260,7 @@ public class PAL {
 
 		while (pc < codeMem.size()) {
 			currInst = codeMem.get(pc);
+			currentInstruction = currInst;
 
 			// Bump the program counter.
 			pc++;
@@ -644,12 +661,8 @@ public class PAL {
 			// Remember the dynamic link.
 			dynamicLink = dataStack.get(0, -3);
 
-			// Pop data from the stack back down to the last frame.
-			int popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
-
-			for (int i = 0; i < popCount; i++) {
-				dataStack.pop();
-			}
+			// Discard this frame, mark and all.
+			dataStack.unwind(dataStack.getAddress(0, -4));
 
 			// Set the new frame base using the remembered dynamic
 			// link.
@@ -668,12 +681,8 @@ public class PAL {
 			// Remember the dynamic link.
 			dynamicLink = dataStack.get(0, -3);
 
-			// Pop data from the stack back down to the last frame.
-			popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
-
-			for (int i = 0; i < popCount; i++) {
-				dataStack.pop();
-			}
+			// Discard this frame, mark and all.
+			dataStack.unwind(dataStack.getAddress(0, -4));
 
 			// Set the new frame base using the remembered dynamic
 			// link.
@@ -859,7 +868,7 @@ public class PAL {
 			if (ntos.getType() != tos.getType()) {
 				dataStack.push(ntos);
 				dataStack.push(tos);
-				error(currInst, "Values for arithmetic operations must be"
+				error(currInst, "Values for comparison operations must be"
 						+ " of same type.");
 				return ExitStatus.ABNORMAL;
 			} else {
@@ -867,7 +876,7 @@ public class PAL {
 				if (type != Data.INT && type != Data.REAL) {
 					dataStack.push(ntos);
 					dataStack.push(tos);
-					error(currInst, "Values for arithmetic operations must be"
+					error(currInst, "Values for comparison operations must be"
 							+ " of type integer or real.");
 					return ExitStatus.ABNORMAL;
 				}
@@ -1093,7 +1102,7 @@ public class PAL {
 			tos = dataStack.pop();
 			if (tos.getType() != Data.INT) {
 				dataStack.push(tos);
-				error(currInst, "OPR 0 31 expects an integer value"
+				error(currInst, "OPR 0 31 expects an integer value "
 						+ "on top of the stack.");
 				return ExitStatus.ABNORMAL;
 			}
@@ -1104,7 +1113,11 @@ public class PAL {
 			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(pushValue)));
 			break;
 		default:
-			out.println("OPR " + opr + ": not implemented.");
+			// Unreachable: opr is range checked above, and every operation
+			// from 0 to 31 has a case. Reaching here would be a bug in the
+			// machine rather than in the program, so say so rather than
+			// printing a note and carrying on as though nothing happened.
+			throw new IllegalStateException("No case for OPR " + opr + ".");
 		}
 		return ExitStatus.NORMAL;
 	}
@@ -1193,13 +1206,8 @@ public class PAL {
 				// Remember the dynamic link.
 				dynamicLink = dataStack.get(0, -3);
 
-				// Pop data from the stack back down to the previous
-				// frame.
-				int pops = dataStack.getTop() - dataStack.getAddress(0, -4);
-
-				for (int i = 0; i < pops; i++) {
-					dataStack.pop();
-				}
+				// Discard this frame, mark and all.
+				dataStack.unwind(dataStack.getAddress(0, -4));
 
 				// Set the new frame base using the remembered dynamic
 				// link.

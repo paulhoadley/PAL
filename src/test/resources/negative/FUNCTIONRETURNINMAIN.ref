@@ -1,1 +1,8 @@
-PAL address out of bounds.
+
+Runtime Error:
+FUNCTIONRETURNINMAIN:2:Address -2 is outside the data stack.
+OPR 0 1
+
+Stack dump:
+----------
+5

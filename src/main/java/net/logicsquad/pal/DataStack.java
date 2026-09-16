@@ -54,27 +54,33 @@ final class DataStack {
 	 * 
 	 * @param datum
 	 *            A <code>Data</code> object to be pushed onto the stack.
-	 * @exception java.lang.OutOfMemoryError
+	 * @exception MachineFault
 	 *                if there is insufficient free stack space.
 	 */
-	public void push(Data datum) throws OutOfMemoryError {
+	public void push(Data datum) {
+		if (maxSize != 0 && top + 1 > maxSize) {
+			throw MachineFault.stackOverflow(maxSize);
+		}
+
 		top++;
 
 		data.add(datum);
 
-		if (maxSize == 0 || top < maxSize) {
-			return;
-		}
-
-		throw new OutOfMemoryError("PAL Stack out of memory.");
+		return;
 	}
 
 	/**
 	 * Pop the top value from the stack.
 	 * 
 	 * @return The <code>Data</code> object removed from the top of the stack.
+	 * @exception MachineFault
+	 *                if the current frame holds no value to pop.
 	 */
 	public Data pop() {
+		if (top <= frameBase) {
+			throw MachineFault.stackUnderflow();
+		}
+
 		return data.remove(--top);
 	}
 
@@ -82,9 +88,37 @@ final class DataStack {
 	 * Peek at the top of the stack.
 	 * 
 	 * @return The <code>Data</code> object remaining on the top of the stack.
+	 * @exception MachineFault
+	 *                if the current frame holds no value to peek at.
 	 */
 	public Data peek() {
+		if (top <= frameBase) {
+			throw MachineFault.stackUnderflow();
+		}
+
 		return data.get(top - 1);
+	}
+
+	/**
+	 * Discard everything above a given address, stack mark included.
+	 *
+	 * <p>
+	 * This is how the machine dismantles a frame when returning from a call or
+	 * searching for an exception handler, and it is deliberately not
+	 * {@link DataStack#pop()}: those callers must go below the current frame
+	 * base, which is exactly what <code>pop()</code> refuses to do. Keeping the
+	 * two apart is what lets a pop too many be caught as the program error it
+	 * is, rather than quietly eating the frame's mark.
+	 *
+	 * @param address
+	 *            the address to unwind to
+	 */
+	public void unwind(int address) {
+		while (top > address) {
+			data.remove(--top);
+		}
+
+		return;
 	}
 
 	/**
@@ -94,12 +128,12 @@ final class DataStack {
 	 * @param address
 	 *            The absolute address for the target location.
 	 * @return The <code>Data</code> object at the target location.
-	 * @exception java.lang.IndexOutOfBoundsException
+	 * @exception MachineFault
 	 *                if the supplied address is out of bounds.
 	 */
-	public Data get(int address) throws IndexOutOfBoundsException {
+	public Data get(int address) {
 		if (address < 0 || address >= top) {
-			throw new IndexOutOfBoundsException("PAL address out of bounds.");
+			throw MachineFault.badAddress(address);
 		}
 
 		return data.get(address);
@@ -116,10 +150,10 @@ final class DataStack {
 	 * @param offset
 	 *            The offset into the target stack frame.
 	 * @return The <code>Data</code> object at the target address.
-	 * @exception java.lang.IndexOutOfBoundsException
+	 * @exception MachineFault
 	 *                if the supplied address is out of bounds.
 	 */
-	public Data get(int levelDiff, int offset) throws IndexOutOfBoundsException {
+	public Data get(int levelDiff, int offset) {
 		int address = getAddress(levelDiff, offset);
 
 		return get(address);
@@ -131,13 +165,13 @@ final class DataStack {
 	 * 
 	 * @param amount
 	 *            The number of location to advance the TOS pointer.
-	 * @exception java.lang.OutOfMemoryError
+	 * @exception MachineFault
 	 *                if an attempt is made to advance the TOS pointer beyond
 	 *                the limit of the stack memory.
 	 */
-	public void incTop(int amount) throws OutOfMemoryError {
+	public void incTop(int amount) {
 		if ((maxSize != 0) && (amount + top > maxSize)) {
-			throw new OutOfMemoryError("PAL Stack out of memory");
+			throw MachineFault.stackOverflow(maxSize);
 		}
 
 		for (int i = 0; i < amount; i++) {
@@ -155,12 +189,11 @@ final class DataStack {
 	 * @param dynamicLink
 	 *            A pointer to the activation record one level below the current
 	 *            level in terms of <em>dynamic scope</em>.
-	 * @exception java.lang.OutOfMemoryError
+	 * @exception MachineFault
 	 *                if the TOS pointer is advanced beyond the limit of stack
 	 *                memory.
 	 */
-	public void markStack(int staticLink, int dynamicLink)
-			throws OutOfMemoryError {
+	public void markStack(int staticLink, int dynamicLink) {
 		push(new Data(Data.INT, Integer.valueOf(staticLink)));
 		push(new Data(Data.INT, Integer.valueOf(dynamicLink)));
 
@@ -193,11 +226,10 @@ final class DataStack {
 	 * @param offset
 	 *            The offset into the target stack frame.
 	 * @return The absolute address for the target location.
-	 * @exception java.lang.IndexOutOfBoundsException
+	 * @exception MachineFault
 	 *                if the supplied level difference is invalid.
 	 */
-	public int getAddress(int levelDiff, int offset)
-			throws IndexOutOfBoundsException {
+	public int getAddress(int levelDiff, int offset) {
 		int result = frameBase;
 
 		for (int i = 0; i < levelDiff; i++) {

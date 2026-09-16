@@ -20,13 +20,11 @@ import org.junit.jupiter.api.TestFactory;
  * for the fixture file conventions.
  *
  * <p>
- * Unlike {@link PALTest}, each fixture runs in its own JVM. Load errors still
- * call <code>System.exit()</code> from inside the loader, which would take the
- * test JVM down with it, and running out of process has the side benefit of
- * checking the real process exit code rather than an
- * {@link PAL.ExitStatus}. Once #28 gives the loader an exception to throw,
- * these could move in process, though the end-to-end exit code check is worth
- * keeping.
+ * Unlike {@link PALTest}, each fixture runs in its own JVM. Since #28 the
+ * loader throws rather than calling <code>System.exit()</code>, so these could
+ * now run in process; they stay out of process because doing so checks the
+ * real process exit code, and the mapping from {@link PAL.ExitStatus} to that
+ * code is part of what the fixtures are for.
  *
  * <p>
  * Each fixture is run with its own directory as the working directory and is

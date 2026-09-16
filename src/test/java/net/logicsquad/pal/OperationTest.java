@@ -188,7 +188,13 @@ public class OperationTest {
 		new Refusal("OPR 30: operands must be booleans",
 				"LCI 0 1\nLCI 0 2\nOPR 0 30\nJMP 0 0\n", "type boolean"),
 		new Refusal("OPR 31: operand must be an integer",
-				"LCS 0 'x'\nOPR 0 31\nJMP 0 0\n", "integer value"));
+				"LCS 0 'x'\nOPR 0 31\nJMP 0 0\n", "integer value on top of the stack"),
+		new Refusal("OPR 10: comparison operands must match",
+				"LCI 0 1\nLCR 0 1.0\nOPR 0 10\nJMP 0 0\n",
+				"Values for comparison operations must be of same type."),
+		new Refusal("OPR 15: comparison operands must be numeric",
+				"LCS 0 'a'\nLCS 0 'b'\nOPR 0 15\nJMP 0 0\n",
+				"Values for comparison operations must be of type integer or real."));
 
 	/**
 	 * Every operation that should succeed.

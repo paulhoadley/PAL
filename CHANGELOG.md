@@ -3,6 +3,48 @@
 This project adheres to [Semantic
 Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Release 0.6 (2026-09-16)
+Error handling. A PAL program can no longer make the machine emit a raw
+JVM exception, and several faults that were reported as something else,
+or not diagnosed at all, now say what actually happened.
+
+Anything parsing the machine's diagnostics should expect different text.
+Load errors are now `file:line: message`, and three runtime faults that
+used to print a bare line of JVM text now produce the same full
+diagnostic, with offending instruction and stack dump, as every other
+fault.
+
+### Changed
+- `OutOfMemoryError` and `IndexOutOfBoundsException` give way to a PAL
+  exception hierarchy. A fault in the program being run is now always
+  distinguishable from a bug in the simulator running it, and only the
+  latter reaches the user as a stack trace.
+  [#28](https://github.com/paulhoadley/pal/issues/28)
+
+### Fixed
+- Popping more than a frame holds is refused, instead of silently
+  consuming the frame's stack mark and failing later with an unrelated
+  complaint. Returning from a call still unwinds past the mark, which is
+  now a separate operation.
+  [#30](https://github.com/paulhoadley/pal/issues/30)
+- The data stack holds the 500 words the manual promises, whichever way
+  it grew, and a refused push no longer leaves its value behind.
+  [#30](https://github.com/paulhoadley/pal/issues/30)
+- The code store limit counts instructions rather than source lines, so a
+  program padded with blank lines is no longer rejected for exceeding a
+  limit it never reached.
+  [#30](https://github.com/paulhoadley/pal/issues/30)
+- An unterminated string literal is reported as one, rather than throwing
+  out of the loader.
+  [#29](https://github.com/paulhoadley/pal/issues/29)
+- Naming a file that cannot be opened, or naming none when there is no
+  `./CODE`, prints the reason and the usage message rather than a stack
+  trace. Usage goes to stderr, where a diagnostic belongs.
+  [#29](https://github.com/paulhoadley/pal/issues/29)
+- Comparisons no longer complain about arithmetic, and `OPR 0 31` no
+  longer runs two words together.
+  [#31](https://github.com/paulhoadley/pal/issues/31)
+
 ## Release 0.5 (2026-09-14)
 Housekeeping throughout: nothing here changes how the machine executes a
 program. The test suite grew from 2 reported tests to 130.

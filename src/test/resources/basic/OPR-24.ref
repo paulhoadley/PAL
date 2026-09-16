@@ -1,6 +1,6 @@
 
 Runtime Error:
-CODE:3:JIF - top of stack not a boolean.
+CODE:3:Stack underflow: the current frame has no value to pop.
 JIF 0 42
 
 Stack dump:

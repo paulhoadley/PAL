@@ -64,9 +64,46 @@ public class DataStackTest {
 	@Test
 	public void addressOutOfBoundsIsRefused() {
 		DataStack stack = new DataStack();
-		assertThrows(IndexOutOfBoundsException.class, () -> stack.get(-1));
-		assertThrows(IndexOutOfBoundsException.class, () -> stack.get(stack.getTop()),
-				"the slot above the top is not readable");
+		assertEquals(MachineFault.Kind.BAD_ADDRESS,
+				assertThrows(MachineFault.class, () -> stack.get(-1)).kind());
+		assertEquals(MachineFault.Kind.BAD_ADDRESS,
+				assertThrows(MachineFault.class, () -> stack.get(stack.getTop()),
+						"the slot above the top is not readable").kind());
+	}
+
+	@Test
+	public void popRefusesToGoBelowTheFrameBase() {
+		DataStack stack = new DataStack();
+		stack.push(new Data(Data.INT, Integer.valueOf(1)));
+		assertEquals(1, ((Integer) stack.pop().getValue()).intValue(),
+				"the frame's own value pops normally");
+
+		assertEquals(MachineFault.Kind.STACK_UNDERFLOW,
+				assertThrows(MachineFault.class, () -> stack.pop()).kind(),
+				"popping into the mark is refused");
+		assertEquals(MARK_SIZE, stack.getTop(), "the mark survives the refusal");
+	}
+
+	@Test
+	public void peekRefusesAnEmptyFrame() {
+		DataStack stack = new DataStack();
+		assertEquals(MachineFault.Kind.STACK_UNDERFLOW,
+				assertThrows(MachineFault.class, () -> stack.peek()).kind());
+	}
+
+	@Test
+	public void unwindGoesWherePopWillNot() {
+		DataStack stack = new DataStack();
+		int outerTop = stack.getTop();
+
+		// A frame of its own, as a call would build it.
+		stack.markStack(outerTop, outerTop);
+		stack.setBase(stack.getTop());
+		stack.push(new Data(Data.INT, Integer.valueOf(7)));
+
+		// Unwinding takes the frame and its mark; pop refuses to.
+		stack.unwind(stack.getAddress(0, -MARK_SIZE));
+		assertEquals(outerTop, stack.getTop(), "frame and mark both gone");
 	}
 
 	@Test
@@ -95,29 +132,33 @@ public class DataStackTest {
 	@Test
 	public void incTopRefusesToCrossTheLimit() {
 		DataStack stack = new DataStack(10);
-		assertThrows(OutOfMemoryError.class, () -> stack.incTop(100));
+		assertThrows(MachineFault.class, () -> stack.incTop(100));
 		assertEquals(MARK_SIZE, stack.getTop(), "a refused incTop leaves the stack alone");
 	}
 
 	/**
-	 * Documents the inconsistency between the two ways of growing the stack.
-	 * {@code incTop} checks before it grows and so reaches the configured
-	 * size, while {@code push} appends first and only then complains, so it
-	 * stops one short and leaves the datum behind. #30 makes them agree.
+	 * The two ways of growing the stack now agree on where the limit is, and
+	 * both check before they grow. Before #30, {@code push} appended first and
+	 * complained afterwards, so it stopped one short of the configured size
+	 * and left the rejected datum on the stack.
 	 */
 	@Test
-	public void pushAndIncTopDisagreeAboutTheLimit() {
+	public void pushAndIncTopAgreeAboutTheLimit() {
 		DataStack byIncTop = new DataStack(10);
 		byIncTop.incTop(10 - MARK_SIZE);
 		assertEquals(10, byIncTop.getTop(), "incTop reaches the limit exactly");
+		assertThrows(MachineFault.class, () -> byIncTop.incTop(1),
+				"and goes no further");
 
 		DataStack byPush = new DataStack(10);
-		assertThrows(OutOfMemoryError.class, () -> {
-			for (int i = 0; i < 10; i++) {
-				byPush.push(new Data(Data.INT, Integer.valueOf(i)));
-			}
-		});
-		assertEquals(10, byPush.getTop(), "push throws only after growing, see #30");
+		for (int i = MARK_SIZE; i < 10; i++) {
+			byPush.push(new Data(Data.INT, Integer.valueOf(i)));
+		}
+		assertEquals(10, byPush.getTop(), "push reaches the same limit");
+		assertThrows(MachineFault.class,
+				() -> byPush.push(new Data(Data.INT, Integer.valueOf(0))),
+				"and goes no further");
+		assertEquals(10, byPush.getTop(), "a refused push leaves the stack alone");
 	}
 
 	@Test

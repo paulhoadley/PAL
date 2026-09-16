@@ -2,7 +2,9 @@ package net.logicsquad.pal;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -10,9 +12,10 @@ import java.nio.charset.StandardCharsets;
  * process, without disturbing the system streams.
  *
  * <p>
- * Only useful for programs that load successfully. A program the loader
- * rejects calls <code>System.exit()</code> and would take the test JVM with
- * it; those belong in <code>src/test/resources/negative</code>, driven by
+ * Since #29 the loader throws {@link LoadException} rather than calling
+ * <code>System.exit()</code>, so a program it rejects can be run here and the
+ * exception asserted on. Whether a rejection produces the right message and
+ * the right process exit code is still checked end to end by
  * {@link NegativeFixtureTest}.
  *
  * @author paulh
@@ -45,10 +48,16 @@ final class Machines {
 	static Run run(String program, String input) {
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 		PrintStream stream = new PrintStream(buffer, true, StandardCharsets.UTF_8);
-		PAL machine = new PAL(
-				new ByteArrayInputStream(program.getBytes(StandardCharsets.UTF_8)),
-				new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)),
-				stream, stream);
+		PAL machine;
+		try {
+			machine = new PAL(
+					new ByteArrayInputStream(program.getBytes(StandardCharsets.UTF_8)),
+					new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)),
+					stream, stream);
+		} catch (IOException e) {
+			// Both streams are in memory, so there is nothing to fail.
+			throw new UncheckedIOException(e);
+		}
 		PAL.ExitStatus status = machine.execute();
 		stream.flush();
 		return new Run(buffer.toString(StandardCharsets.UTF_8), status);
