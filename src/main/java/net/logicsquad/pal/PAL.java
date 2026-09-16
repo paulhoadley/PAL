@@ -97,7 +97,7 @@ public class PAL {
 	 */
 	public static void main(String[] args) {
 		if (args.length > 1) {
-			usage(System.out);
+			usage(System.err);
 			System.exit(ExitStatus.ABNORMAL.exitCode());
 		} else if (args.length == 1) {
 			filename = args[0];
@@ -106,15 +106,18 @@ public class PAL {
 		// Make a machine and load the code. Anything that stops us
 		// getting as far as a termination instruction is abnormal.
 		ExitStatus status = ExitStatus.ABNORMAL;
-		try {
-			PAL machine = new PAL(new FileInputStream(filename));
+		try (InputStream is = new FileInputStream(filename)) {
+			PAL machine = new PAL(is);
 			status = machine.execute();
 		} catch (LoadException e) {
 			System.err.println(filename + ":" + e.lineno() + ": "
 					+ e.getMessage());
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println("Cannot open " + filename + ".");
+			usage(System.err);
+		} catch (IOException e) {
+			System.err.println("Error reading " + filename + ": "
+					+ e.getMessage());
 		}
 		System.exit(status.exitCode());
 	}
@@ -126,7 +129,7 @@ public class PAL {
 	 * lexical analysis of the source file is quite rigid. Any deviation from
 	 * the prescribed format for source files causes the machine to stop.
 	 */
-	PAL(InputStream is) {
+	PAL(InputStream is) throws IOException {
 		this(is, System.in, System.out, System.err);
 	}
 
@@ -146,7 +149,8 @@ public class PAL {
 	 * @param err
 	 *            stream for load errors and runtime diagnostics
 	 */
-	PAL(InputStream is, InputStream in, PrintStream out, PrintStream err) {
+	PAL(InputStream is, InputStream in, PrintStream out, PrintStream err)
+			throws IOException {
 		this.out = out;
 		this.err = err;
 
@@ -154,81 +158,73 @@ public class PAL {
 		codeMem = new ArrayList<Code>(CODESIZE);
 		dataStack = new DataStack(DATASIZE);
 
-		try {
-			BufferedReader br = new BufferedReader(new InputStreamReader(is));
-			int lineno = 1;
-			String line = br.readLine();
-			Mnemonic mnemonic = null;
-			int first = 0;
-			Object second = null;
-			StringTokenizer st;
+		BufferedReader br = new BufferedReader(new InputStreamReader(is));
+		int lineno = 1;
+		String line = br.readLine();
+		Mnemonic mnemonic = null;
+		int first = 0;
+		Object second = null;
+		StringTokenizer st;
 
-			while (line != null) {
-				st = new StringTokenizer(line);
+		while (line != null) {
+			st = new StringTokenizer(line);
 
-				// It seems reasonable to allow blank lines in the
-				// source.
-				if (!(st.hasMoreTokens())) {
-					line = br.readLine();
-					lineno++;
-					continue;
-				}
-
-				// May not come in groups of three, in which case,
-				// catch the error.
-				try {
-					String token = st.nextToken();
-					Optional<Mnemonic> parsed = Mnemonic.from(token);
-					if (parsed.isEmpty()) {
-						throw new LoadException(lineno,
-								"Unknown mnemonic '" + token + "'.");
-					}
-					mnemonic = parsed.get();
-					first = Integer.parseInt(st.nextToken());
-					String s = st.nextToken();
-					if (s.startsWith("'")) {
-						int start = line.indexOf('\'');
-						int end = line.indexOf('\'', start + 1);
-						if (end < 0) {
-							throw new LoadException(lineno,
-									"Unterminated string literal.");
-						}
-						second = line.substring(start, end + 1);
-					} else {
-						second = makeObject(s);
-						if (second instanceof String) {
-							throw new LoadException(lineno,
-									"Unrecognised second operand.");
-						}
-					}
-				} catch (NoSuchElementException e) {
-					throw new LoadException(lineno, "Not enough tokens.");
-				} catch (NumberFormatException e) {
-					throw new LoadException(lineno,
-							"First operand non-integer.");
-				}
-				if (codeMem.size() >= CODESIZE) {
-					throw new LoadException(lineno,
-							"Exceeded code storage limit.");
-				}
-				codeMem.add(new Code(mnemonic, first, second, lineno));
+			// It seems reasonable to allow blank lines in the
+			// source.
+			if (!(st.hasMoreTokens())) {
 				line = br.readLine();
 				lineno++;
+				continue;
 			}
 
-			// Set up the input reader.
-			pushBack = new PushbackReader(new InputStreamReader(in));
-			// Note: the internal buffer of the BufferedReader is set
-			// to 1 (the smallest possible) so that it won't buffer up
-			// to EOF, thereby confusing OPR 19.
-			inputReader = new BufferedReader(pushBack, 1);
-		} catch (FileNotFoundException e) {
-			usage(err);
-			System.exit(ExitStatus.ABNORMAL.exitCode());
-		} catch (IOException e) {
-			err.println(e);
-			System.exit(ExitStatus.ABNORMAL.exitCode());
+			// May not come in groups of three, in which case,
+			// catch the error.
+			try {
+				String token = st.nextToken();
+				Optional<Mnemonic> parsed = Mnemonic.from(token);
+				if (parsed.isEmpty()) {
+					throw new LoadException(lineno,
+							"Unknown mnemonic '" + token + "'.");
+				}
+				mnemonic = parsed.get();
+				first = Integer.parseInt(st.nextToken());
+				String s = st.nextToken();
+				if (s.startsWith("'")) {
+					int start = line.indexOf('\'');
+					int end = line.indexOf('\'', start + 1);
+					if (end < 0) {
+						throw new LoadException(lineno,
+								"Unterminated string literal.");
+					}
+					second = line.substring(start, end + 1);
+				} else {
+					second = makeObject(s);
+					if (second instanceof String) {
+						throw new LoadException(lineno,
+								"Unrecognised second operand.");
+					}
+				}
+			} catch (NoSuchElementException e) {
+				throw new LoadException(lineno, "Not enough tokens.");
+			} catch (NumberFormatException e) {
+				throw new LoadException(lineno,
+						"First operand non-integer.");
+			}
+			if (codeMem.size() >= CODESIZE) {
+				throw new LoadException(lineno,
+						"Exceeded code storage limit.");
+			}
+			codeMem.add(new Code(mnemonic, first, second, lineno));
+			line = br.readLine();
+			lineno++;
 		}
+
+		// Set up the input reader.
+		pushBack = new PushbackReader(new InputStreamReader(in));
+		// Note: the internal buffer of the BufferedReader is set
+		// to 1 (the smallest possible) so that it won't buffer up
+		// to EOF, thereby confusing OPR 19.
+		inputReader = new BufferedReader(pushBack, 1);
 
 		currentException = 0;
 
