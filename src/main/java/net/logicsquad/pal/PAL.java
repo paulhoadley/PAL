@@ -868,7 +868,7 @@ public class PAL {
 			if (ntos.getType() != tos.getType()) {
 				dataStack.push(ntos);
 				dataStack.push(tos);
-				error(currInst, "Values for arithmetic operations must be"
+				error(currInst, "Values for comparison operations must be"
 						+ " of same type.");
 				return ExitStatus.ABNORMAL;
 			} else {
@@ -876,7 +876,7 @@ public class PAL {
 				if (type != Data.INT && type != Data.REAL) {
 					dataStack.push(ntos);
 					dataStack.push(tos);
-					error(currInst, "Values for arithmetic operations must be"
+					error(currInst, "Values for comparison operations must be"
 							+ " of type integer or real.");
 					return ExitStatus.ABNORMAL;
 				}
@@ -1102,7 +1102,7 @@ public class PAL {
 			tos = dataStack.pop();
 			if (tos.getType() != Data.INT) {
 				dataStack.push(tos);
-				error(currInst, "OPR 0 31 expects an integer value"
+				error(currInst, "OPR 0 31 expects an integer value "
 						+ "on top of the stack.");
 				return ExitStatus.ABNORMAL;
 			}
@@ -1113,7 +1113,11 @@ public class PAL {
 			dataStack.push(new Data(Data.BOOL, Boolean.valueOf(pushValue)));
 			break;
 		default:
-			out.println("OPR " + opr + ": not implemented.");
+			// Unreachable: opr is range checked above, and every operation
+			// from 0 to 31 has a case. Reaching here would be a bug in the
+			// machine rather than in the program, so say so rather than
+			// printing a note and carrying on as though nothing happened.
+			throw new IllegalStateException("No case for OPR " + opr + ".");
 		}
 		return ExitStatus.NORMAL;
 	}
