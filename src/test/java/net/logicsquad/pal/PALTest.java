@@ -17,7 +17,8 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
 /**
- * Functional tests on {@link PAL}, running each fixture in process against
+ * Functional tests on {@link Loader} and {@link Machine}, running each
+ * fixture in process against
  * injected streams. See {@link Fixtures} for the fixture file conventions.
  *
  * <p>
@@ -90,8 +91,9 @@ public class PALTest {
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 		PrintStream stream = new PrintStream(buffer, true, StandardCharsets.UTF_8);
 
-		PAL machine = new PAL(Files.newInputStream(fixture), input(fixture), stream, stream);
-		PAL.ExitStatus status = machine.execute();
+		Program program = Loader.load(Files.newInputStream(fixture), Machines.NAME);
+		ExitStatus status = new Machine(program, input(fixture), stream, stream)
+				.execute();
 		stream.flush();
 
 		String actual = buffer.toString(StandardCharsets.UTF_8);
