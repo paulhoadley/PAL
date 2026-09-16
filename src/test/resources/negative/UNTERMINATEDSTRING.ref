@@ -1,1 +1,1 @@
-Range [6, 0) out of bounds for length 10
+UNTERMINATEDSTRING:1: Unterminated string literal.

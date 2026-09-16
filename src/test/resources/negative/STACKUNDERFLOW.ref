@@ -1,1 +1,11 @@
-Index -1 out of bounds for length 0
+
+Runtime Error:
+STACKUNDERFLOW:1:Stack underflow: the current frame has no value to pop.
+OPR 0 24
+
+Stack dump:
+----------
+0
+0
+0
+0

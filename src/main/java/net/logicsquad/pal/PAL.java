@@ -38,6 +38,13 @@ public class PAL {
 	/** The program counter. */
 	private int pc;
 
+	/**
+	 * The instruction currently executing. Held so that a {@link MachineFault}
+	 * raised in {@link DataStack}, which has no idea what the machine is doing,
+	 * can still be reported against the instruction that provoked it.
+	 */
+	private Code currentInstruction;
+
 	/** Input reader. */
 	private BufferedReader inputReader;
 
@@ -102,10 +109,9 @@ public class PAL {
 		try {
 			PAL machine = new PAL(new FileInputStream(filename));
 			status = machine.execute();
-		} catch (OutOfMemoryError e) {
-			System.err.println(e.getMessage());
-		} catch (IndexOutOfBoundsException e) {
-			System.err.println(e.getMessage());
+		} catch (LoadException e) {
+			System.err.println(filename + ":" + e.lineno() + ": "
+					+ e.getMessage());
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -159,9 +165,8 @@ public class PAL {
 
 			while (line != null) {
 				if (lineno > CODESIZE) {
-					err.println("Exceeded code storage limit at line "
-							+ lineno);
-					System.exit(ExitStatus.ABNORMAL.exitCode());
+					throw new LoadException(lineno,
+							"Exceeded code storage limit.");
 				}
 				st = new StringTokenizer(line);
 
@@ -179,9 +184,8 @@ public class PAL {
 					String token = st.nextToken();
 					Optional<Mnemonic> parsed = Mnemonic.from(token);
 					if (parsed.isEmpty()) {
-						err.println("Unknown mnemonic '" + token
-								+ "' on line " + lineno);
-						System.exit(ExitStatus.ABNORMAL.exitCode());
+						throw new LoadException(lineno,
+								"Unknown mnemonic '" + token + "'.");
 					}
 					mnemonic = parsed.get();
 					first = Integer.parseInt(st.nextToken());
@@ -189,22 +193,23 @@ public class PAL {
 					if (s.startsWith("'")) {
 						int start = line.indexOf('\'');
 						int end = line.indexOf('\'', start + 1);
+						if (end < 0) {
+							throw new LoadException(lineno,
+									"Unterminated string literal.");
+						}
 						second = line.substring(start, end + 1);
 					} else {
 						second = makeObject(s);
 						if (second instanceof String) {
-							err.println("Unrecognised second operand"
-									+ " on line " + lineno);
-							System.exit(ExitStatus.ABNORMAL.exitCode());
+							throw new LoadException(lineno,
+									"Unrecognised second operand.");
 						}
 					}
 				} catch (NoSuchElementException e) {
-					err.println("Not enough tokens on line " + lineno);
-					System.exit(ExitStatus.ABNORMAL.exitCode());
+					throw new LoadException(lineno, "Not enough tokens.");
 				} catch (NumberFormatException e) {
-					err.println("First operand non-integer on line "
-							+ lineno);
-					System.exit(ExitStatus.ABNORMAL.exitCode());
+					throw new LoadException(lineno,
+							"First operand non-integer.");
 				}
 				codeMem.add(new Code(mnemonic, first, second, lineno));
 				line = br.readLine();
@@ -237,6 +242,21 @@ public class PAL {
 	 * PAL Machine</a>.
 	 */
 	ExitStatus execute() {
+		try {
+			return run();
+		} catch (MachineFault fault) {
+			error(currentInstruction, fault.getMessage());
+			return ExitStatus.ABNORMAL;
+		}
+	}
+
+	/**
+	 * Run the loaded program, leaving any {@link MachineFault} to
+	 * {@link PAL#execute()} to report.
+	 *
+	 * @return how the program finished
+	 */
+	private ExitStatus run() {
 		// Initialise program counter.
 		pc = 0;
 
@@ -244,6 +264,7 @@ public class PAL {
 
 		while (pc < codeMem.size()) {
 			currInst = codeMem.get(pc);
+			currentInstruction = currInst;
 
 			// Bump the program counter.
 			pc++;
@@ -644,12 +665,8 @@ public class PAL {
 			// Remember the dynamic link.
 			dynamicLink = dataStack.get(0, -3);
 
-			// Pop data from the stack back down to the last frame.
-			int popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
-
-			for (int i = 0; i < popCount; i++) {
-				dataStack.pop();
-			}
+			// Discard this frame, mark and all.
+			dataStack.unwind(dataStack.getAddress(0, -4));
 
 			// Set the new frame base using the remembered dynamic
 			// link.
@@ -668,12 +685,8 @@ public class PAL {
 			// Remember the dynamic link.
 			dynamicLink = dataStack.get(0, -3);
 
-			// Pop data from the stack back down to the last frame.
-			popCount = dataStack.getTop() - dataStack.getAddress(0, -4);
-
-			for (int i = 0; i < popCount; i++) {
-				dataStack.pop();
-			}
+			// Discard this frame, mark and all.
+			dataStack.unwind(dataStack.getAddress(0, -4));
 
 			// Set the new frame base using the remembered dynamic
 			// link.
@@ -1193,13 +1206,8 @@ public class PAL {
 				// Remember the dynamic link.
 				dynamicLink = dataStack.get(0, -3);
 
-				// Pop data from the stack back down to the previous
-				// frame.
-				int pops = dataStack.getTop() - dataStack.getAddress(0, -4);
-
-				for (int i = 0; i < pops; i++) {
-					dataStack.pop();
-				}
+				// Discard this frame, mark and all.
+				dataStack.unwind(dataStack.getAddress(0, -4));
 
 				// Set the new frame base using the remembered dynamic
 				// link.
