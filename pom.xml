@@ -151,6 +151,14 @@
               <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
               <mainClass>net.logicsquad.pal.PAL</mainClass>
             </manifest>
+            <manifestEntries>
+              <!-- Reserves the module name now, while the jar is still an
+                   automatic module. Without this the name is derived from the
+                   file name, so it would be "pal", and adding a module-info
+                   later (#40) would rename the module and break anyone's
+                   "requires pal;" in a minor release. -->
+              <Automatic-Module-Name>net.logicsquad.pal</Automatic-Module-Name>
+            </manifestEntries>
           </archive>
         </configuration>
       </plugin>
