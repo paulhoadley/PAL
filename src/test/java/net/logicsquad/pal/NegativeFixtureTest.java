@@ -32,12 +32,11 @@ import org.junit.jupiter.api.TestFactory;
  * message is stable wherever the project is checked out.
  *
  * <p>
- * Some reference files here record behaviour that is <em>known to be poor</em>
- * and is scheduled to improve: <code>UNTERMINATEDSTRING</code> and
- * <code>STACKUNDERFLOW</code> currently surface raw Java exception messages
- * (#28, #29, #30), and <code>BLANKLINESTOLIMIT</code> is rejected only because
- * the code store limit counts lines rather than instructions (#30). They are
- * here so that those fixes show up as a visible change in expected output.
+ * Two fixtures here are not failures at all, and are kept as the controls for
+ * the ones around them. <code>TERMINATES</code> is the smallest program that
+ * ends properly, and <code>BLANKLINESTOLIMIT</code> is one instruction
+ * padded out to a thousand blank lines, which loaded only once the code store
+ * limit began counting instructions rather than lines (#30).
  *
  * @author paulh
  */

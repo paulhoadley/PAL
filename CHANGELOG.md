@@ -1,7 +1,61 @@
 # Changelog
 
-This project adheres to [Semantic
-Versioning](https://semver.org/spec/v2.0.0.html).
+Version numbers are MAJOR.MINOR, and follow [Semantic
+Versioning](https://semver.org/spec/v2.0.0.html)'s rules for what a change
+in each means: a major bump for a break, a minor bump for an addition.  A
+patch release, if one is ever needed, would be MAJOR.MINOR.PATCH.
+
+## Release 1.0 (2026-09-26)
+Usable by someone who isn't the author. The machine itself is
+untouched — every program that ran before runs identically — but it
+can now be driven, read about and debugged without reading the source.
+
+The one thing to check before upgrading is the exit status. Anything
+treating a non-zero exit as "the program failed" will now see 2 where
+the fault was in the command line rather than in the program: an
+unknown option, a bad limit, or a file that could not be opened. A
+program's own faults remain 1.
+
+### Added
+- Command line options: `--help`, `--version`, `--trace`,
+  `--input=FILE`, and `--code-size=N` and `--data-size=N` to lift the
+  thousand instruction and five hundred word limits. `--trace` reports
+  each instruction before it executes, with its address, its line in
+  the object file, and the value on top of the stack.
+  [#39](https://github.com/paulhoadley/pal/issues/39)
+- A README that says how to build the machine, how to run it, what a
+  program looks like, what the exit statuses mean and how the tests
+  work.  [#37](https://github.com/paulhoadley/pal/issues/37)
+- `Automatic-Module-Name`, declaring the module to be
+  `net.logicsquad.pal`.  Left to the file name it would have been
+  `pal`, and a later `module-info` would have renamed the module out
+  from under anyone who required it.
+  [#40](https://github.com/paulhoadley/pal/issues/40)
+- A record in the README of where the instruction set came from:
+  Wirth's PL/0, two instructions from the Zurich Pascal-P compilers,
+  and the local additions the manual's lineage accounts for.
+
+### Changed
+- A usage error, or a file that cannot be opened, exits 2 rather than
+  1. The distinction is whose fault it was, so a build script can tell
+  a broken program from a mistyped command without reading the
+  diagnostic.  [#39](https://github.com/paulhoadley/pal/issues/39)
+- `doc/PAL.tex` is now `docs/manual.md`, which GitHub renders in
+  place.  Building the old one needed LaTeX, `pic` from groff, `dvips`
+  and `ps2pdf`, which is why no PDF was ever published. It gains the
+  command line options, the exit statuses, and a section on the
+  behaviour this implementation settles where the specification leaves
+  a choice open — among them that integer arithmetic wraps while
+  exponentiation saturates, and that `RDI` is strict about surrounding
+  whitespace where `RDR` is not.
+  [#38](https://github.com/paulhoadley/pal/issues/38)
+
+### Fixed
+- CI runs Javadoc, so the doclint switched back on in 0.7 guards
+  something.  It did not before, and would not have done merely by
+  running the goal: a missing `@param` is a warning that exits zero,
+  so `failOnWarnings` is set as well.
+  [#46](https://github.com/paulhoadley/pal/issues/46)
 
 ## Release 0.7 (2026-09-16)
 Structure. The machine is modelled in the language's own terms rather than

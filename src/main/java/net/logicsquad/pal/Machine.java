@@ -50,6 +50,9 @@ final class Machine {
 	/** Stream for diagnostics. */
 	private final PrintStream err;
 
+	/** Where to report each instruction, if the run is traced. */
+	private final Tracer tracer;
+
 	/**
 	 * Wrapper to enable pushback of bytes into the input stream, for OPR 19.
 	 */
@@ -83,7 +86,7 @@ final class Machine {
 	 *            stream for runtime diagnostics
 	 */
 	Machine(Program program, InputStream in, PrintStream out, PrintStream err) {
-		this(program, in, out, err, DATASIZE);
+		this(program, in, out, err, DATASIZE, Tracer.none());
 	}
 
 	/**
@@ -102,9 +105,33 @@ final class Machine {
 	 */
 	Machine(Program program, InputStream in, PrintStream out, PrintStream err,
 			int dataSize) {
+		this(program, in, out, err, dataSize, Tracer.none());
+	}
+
+	/**
+	 * Constructor, with a data stack of a given size, reporting each
+	 * instruction to {@code tracer} as it goes.
+	 *
+	 * @param program
+	 *            the program to run
+	 * @param in
+	 *            stream the running program reads from
+	 * @param out
+	 *            stream the running program writes to
+	 * @param err
+	 *            stream for runtime diagnostics
+	 * @param dataSize
+	 *            how many words the data stack holds
+	 * @param tracer
+	 *            where to report each instruction; use {@link Tracer#none()}
+	 *            for an untraced run
+	 */
+	Machine(Program program, InputStream in, PrintStream out, PrintStream err,
+			int dataSize, Tracer tracer) {
 		this.program = program;
 		this.out = out;
 		this.err = err;
+		this.tracer = tracer;
 
 		dataStack = new DataStack(dataSize);
 
@@ -121,9 +148,9 @@ final class Machine {
 	/**
 	 * Execute the instructions in the machine's code memory. The instructions
 	 * are implemented in accordance with the specification in
-	 * {@code doc/PAL.tex}, which is this project's copy of the handout the
-	 * machine was written against; the University of Adelaide URL it used to
-	 * cite has long since gone.
+	 * {@code docs/manual.md}, which is this project's own description of
+	 * the machine, written against the handout the University of Adelaide used
+	 * to publish at a URL that has long since gone.
 	 *
 	 * @return how the program finished
 	 */
@@ -151,6 +178,19 @@ final class Machine {
 		while (pc < program.instructions().size()) {
 			currInst = program.instructions().get(pc);
 			currentInstruction = currInst;
+
+			if (tracer.reports()) {
+				// Flushed first so that the trace and the program's own output
+				// stay in order when both go to the same place: OPR 20 prints
+				// without a newline, so output can sit in a buffer while the
+				// unbuffered trace overtakes it. Guarded because a flush per
+				// instruction is a syscall per instruction, which an untraced
+				// run should not be paying for.
+				out.flush();
+
+				// Addresses count from one: that is what a jump operand means.
+				tracer.trace(pc + 1, currInst, dataStack.peekIfAny());
+			}
 
 			// Bump the program counter.
 			pc++;

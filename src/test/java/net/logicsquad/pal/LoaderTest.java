@@ -16,7 +16,7 @@ import net.logicsquad.pal.Machines.Run;
  * what such a rejection looks like from the command line.
  *
  * <p>
- * The grammar is in <code>doc/PAL.tex</code>: three whitespace-separated
+ * The grammar is in <code>docs/manual.md</code>: three whitespace-separated
  * fields, an optional trailing comment, strings delimited by single quotes.
  *
  * @author paulh

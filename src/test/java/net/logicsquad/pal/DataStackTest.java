@@ -193,4 +193,25 @@ public class DataStackTest {
 				assertThrows(MachineFault.class,
 						() -> stack.set(stack.getTop(), new IntValue(1))).kind());
 	}
+
+	@Test
+	public void peekIfAnyReportsAnEmptyFrameRatherThanFaulting() {
+		DataStack stack = new DataStack();
+
+		// The point of the method: peek() is right to fault here, but an
+		// empty frame is what every program starts with, so an observer
+		// asking what is on top must be able to be told "nothing".
+		assertThrows(MachineFault.class, stack::peek, "peek faults");
+		assertTrue(stack.peekIfAny().isEmpty(), "peekIfAny does not");
+	}
+
+	@Test
+	public void peekIfAnyFindsTheValueOnTop() {
+		DataStack stack = new DataStack();
+		Datum datum = new IntValue(7);
+		stack.push(datum);
+
+		assertSame(datum, stack.peekIfAny().orElseThrow());
+		assertSame(datum, stack.peek(), "and leaves it there");
+	}
 }

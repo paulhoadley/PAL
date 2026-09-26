@@ -15,7 +15,7 @@ import net.logicsquad.pal.Machines.Run;
 /**
  * Covers every operation of the <code>OPR</code> instruction, codes 0 to 31,
  * plus the type checks that guard them. Expected values come from the manual
- * in <code>doc/PAL.tex</code>, not from observed behaviour.
+ * in <code>docs/manual.md</code>, not from observed behaviour.
  *
  * @author paulh
  */

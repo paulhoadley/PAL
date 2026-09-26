@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>net.logicsquad</groupId>
   <artifactId>pal</artifactId>
-  <version>0.7</version>
+  <version>1.0</version>
   <packaging>jar</packaging>
   <name>PAL</name>
   <description>The PAL Abstract Machine—An implementation in Java.</description>
@@ -60,10 +60,20 @@
          silently compiles against that JDK's APIs. -->
     <maven.compiler.release>21</maven.compiler.release>
     <!-- Fixed timestamp for reproducible builds. Bump at each release. -->
-    <project.build.outputTimestamp>2026-09-16T00:00:00Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-09-26T00:00:00Z</project.build.outputTimestamp>
   </properties>
 
   <build>
+    <!-- Filtered so that version.properties can carry the project version.
+         Everything here is filtered because everything here is text; a
+         binary resource would need excluding from this. -->
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+
     <pluginManagement>
       <plugins>
         <plugin>
@@ -84,11 +94,11 @@
         </plugin>
         <plugin>
           <artifactId>maven-install-plugin</artifactId>
-          <version>3.1.4</version>
+          <version>3.2.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-deploy-plugin</artifactId>
-          <version>3.1.4</version>
+          <version>3.2.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
@@ -138,8 +148,17 @@
           <archive>
             <manifest>
               <addClasspath>true</addClasspath>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
               <mainClass>net.logicsquad.pal.PAL</mainClass>
             </manifest>
+            <manifestEntries>
+              <!-- Reserves the module name now, while the jar is still an
+                   automatic module. Without this the name is derived from the
+                   file name, so it would be "pal", and adding a module-info
+                   later (#40) would rename the module and break anyone's
+                   "requires pal;" in a minor release. -->
+              <Automatic-Module-Name>net.logicsquad.pal</Automatic-Module-Name>
+            </manifestEntries>
           </archive>
         </configuration>
       </plugin>
@@ -149,6 +168,12 @@
         <configuration>
           <detectLinks />
           <show>private</show>
+          <!-- Without this a missing @param is a warning and the build still
+               exits zero, so running the goal in CI (#46) would enforce
+               nothing. Note that detectLinks and the JDK API link are fetched
+               over the network, so a network failure becomes a build failure
+               here too; that is the price of the check. -->
+          <failOnWarnings>true</failOnWarnings>
         </configuration>
       </plugin>
     </plugins>

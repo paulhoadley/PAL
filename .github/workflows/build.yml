@@ -29,3 +29,12 @@ jobs:
 
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots verify
+
+      # Doclint is on in the POM, but #20 unbound the javadoc plugin from the
+      # lifecycle to keep local builds fast, so "verify" never invokes it and
+      # nothing enforced it. Its own step rather than another goal on the line
+      # above, so that a Javadoc failure is distinguishable from a test
+      # failure at a glance. Run on both JDKs because doclint is the JDK's,
+      # and a newer one can be stricter.
+      - name: Javadoc
+        run: mvn --batch-mode javadoc:javadoc
