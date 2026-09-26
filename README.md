@@ -130,8 +130,8 @@ target architecture for Compiler Construction and Project III in the
 Department of Computer Science at the University of Adelaide in 2002. 
 At that time, the machine simulator was written in Ada, and this project
 represents a re-write from scratch in Java.  The authors wrote this
-implementation after taking Compiler Construction III, and donated it
-back to the Department.
+implementation after taking Compiler Construction and Project III, and
+donated it back to the Department.
 
 Where the design came from
 --------------------------
