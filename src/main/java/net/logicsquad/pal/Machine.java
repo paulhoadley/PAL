@@ -148,9 +148,9 @@ final class Machine {
 	/**
 	 * Execute the instructions in the machine's code memory. The instructions
 	 * are implemented in accordance with the specification in
-	 * {@code doc/PAL.tex}, which is this project's copy of the handout the
-	 * machine was written against; the University of Adelaide URL it used to
-	 * cite has long since gone.
+	 * {@code docs/manual.md}, which is this project's own description of
+	 * the machine, written against the handout the University of Adelaide used
+	 * to publish at a URL that has long since gone.
 	 *
 	 * @return how the program finished
 	 */

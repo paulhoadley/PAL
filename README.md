@@ -45,10 +45,11 @@ plausible.
 What PL/0 does not have, PAL takes from the P-code of the Zurich
 Pascal-P compilers: `MST` marking a frame separately from the call, and
 `LDA` loading an address.  The rest are local additions, and the
-manual's lineage (see `doc/PAL.tex`) says who made them: an original
-Pascal implementation by Chris Marlin, translated to Ada by Michael
-Oudshoorn, with indirection and exception handling added by Kevin
-Maciunas — which is exactly the set `LDI`, `STI`, `REH` and `SIG`.
+lineage recorded in [the manual](docs/manual.md#history) says who made
+them: an original Pascal implementation by Chris Marlin, translated to
+Ada by Michael Oudshoorn, with indirection and exception handling added
+by Kevin Maciunas — which is exactly the set `LDI`, `STI`, `REH` and
+`SIG`.
 
 We have not been able to establish what "PAL" stands for.  The obvious
 search result, the Pedagogic Algorithmic Language devised at MIT by
