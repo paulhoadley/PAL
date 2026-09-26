@@ -168,6 +168,12 @@
         <configuration>
           <detectLinks />
           <show>private</show>
+          <!-- Without this a missing @param is a warning and the build still
+               exits zero, so running the goal in CI (#46) would enforce
+               nothing. Note that detectLinks and the JDK API link are fetched
+               over the network, so a network failure becomes a build failure
+               here too; that is the price of the check. -->
+          <failOnWarnings>true</failOnWarnings>
         </configuration>
       </plugin>
     </plugins>
