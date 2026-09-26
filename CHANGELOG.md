@@ -1,7 +1,9 @@
 # Changelog
 
-This project adheres to [Semantic
-Versioning](https://semver.org/spec/v2.0.0.html).
+Version numbers are MAJOR.MINOR, and follow [Semantic
+Versioning](https://semver.org/spec/v2.0.0.html)'s rules for what a change
+in each means: a major bump for a break, a minor bump for an addition.  A
+patch release, if one is ever needed, would be MAJOR.MINOR.PATCH.
 
 ## Release 0.7 (2026-09-16)
 Structure. The machine is modelled in the language's own terms rather than
