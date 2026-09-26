@@ -64,6 +64,16 @@
   </properties>
 
   <build>
+    <!-- Filtered so that version.properties can carry the project version.
+         Everything here is filtered because everything here is text; a
+         binary resource would need excluding from this. -->
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+
     <pluginManagement>
       <plugins>
         <plugin>
@@ -138,6 +148,7 @@
           <archive>
             <manifest>
               <addClasspath>true</addClasspath>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
               <mainClass>net.logicsquad.pal.PAL</mainClass>
             </manifest>
           </archive>

@@ -2,6 +2,7 @@ package net.logicsquad.pal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * An abstract data type representing the PAL data stack.
@@ -95,6 +96,27 @@ final class DataStack {
 		}
 
 		return data.get(top - 1);
+	}
+
+	/**
+	 * Peek at the top of the stack, if the current frame has anything on it.
+	 *
+	 * <p>
+	 * The distinction from {@link DataStack#peek()} is who is asking. An
+	 * instruction that wants a value and finds none has met a program error, so
+	 * {@code peek()} is right to raise a fault. An observer, such as a
+	 * trace, is only reporting what is there, and an empty frame is a perfectly
+	 * ordinary thing to report: every program begins with one.
+	 *
+	 * @return the value on top of the stack, or an empty {@code Optional}
+	 *         if the current frame holds no value
+	 */
+	Optional<Datum> peekIfAny() {
+		if (top <= frameBase) {
+			return Optional.empty();
+		}
+
+		return Optional.of(data.get(top - 1));
 	}
 
 	/**
